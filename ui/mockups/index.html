@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Intercept Window – UI mockups</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans+Condensed:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+:root{--bg:#06080a;--pane:#0d1013;--line:#1f252c;--tx:#e3e7ea;--lab:#8b96a1;--own:#5cb8e6}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:'IBM Plex Sans Condensed',system-ui,sans-serif;font-size:13px}
+header{display:flex;align-items:baseline;gap:18px;padding:22px 24px 16px;border-bottom:1px solid var(--line)}
+h1{margin:0;font-size:20px;font-weight:600;letter-spacing:.02em}
+.d{color:#aab3bc}
+.mono{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6f7a85}
+main{display:grid;grid-template-columns:repeat(auto-fill,minmax(880px,1fr));gap:24px;padding:24px}
+figure{margin:0;background:var(--pane);border:1px solid var(--line)}
+figcaption{display:flex;align-items:center;justify-content:space-between;height:32px;padding:0 12px;border-bottom:1px solid var(--line)}
+figcaption a{color:var(--own);text-decoration:none}
+figcaption a:hover{text-decoration:underline}
+.frame{width:864px;height:486px;overflow:hidden;position:relative;margin:6px}
+.frame iframe{position:absolute;left:0;top:0;width:1920px;height:1080px;border:0;transform:scale(.45);transform-origin:0 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>Intercept Window – UI mockups</h1>
+  <span class="d">Full-screen map with floating windows. The three map boards are interactive; open one on its own for real mouse input.</span>
+  <span style="flex:1"></span>
+  <span class="mono">v0.2 · Nov 8, 2026</span>
+</header>
+<main>
+  <figure><figcaption><span>Map – clean, UI hidden</span><a href="Main.dc.html">Open full size</a></figcaption><div class="frame"><iframe src="Main.dc.html" title="Map – clean, UI hidden" loading="lazy"></iframe></div></figure>
+  <figure><figcaption><span>Unit windows at Luna</span><a href="Local.dc.html">Open full size</a></figcaption><div class="frame"><iframe src="Local.dc.html" title="Unit windows at Luna" loading="lazy"></iframe></div></figure>
+  <figure><figcaption><span>Transfer planner as a window</span><a href="Transfer.dc.html">Open full size</a></figcaption><div class="frame"><iframe src="Transfer.dc.html" title="Transfer planner as a window" loading="lazy"></iframe></div></figure>
+  <figure><figcaption><span>Input grammar, windows and view rules</span><a href="Input.dc.html">Open full size</a></figcaption><div class="frame"><iframe src="Input.dc.html" title="Input grammar, windows and view rules" loading="lazy"></iframe></div></figure>
+</main>
+</body>
+</html>

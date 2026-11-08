@@ -1,0 +1,63 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Input.dc.html": {
+      "h": 1080,
+      "title": "Input grammar, windows and view rules",
+      "w": 1920,
+      "x": 2000,
+      "y": 1200
+    },
+    "Local.dc.html": {
+      "h": 1080,
+      "is_interactive": true,
+      "title": "Unit windows at Luna (interactive)",
+      "w": 1920,
+      "x": 2000,
+      "y": -27
+    },
+    "Main.dc.html": {
+      "h": 1080,
+      "is_interactive": true,
+      "title": "Map – clean, UI hidden (interactive)",
+      "w": 1920,
+      "x": 0,
+      "y": 0
+    },
+    "Transfer.dc.html": {
+      "h": 1080,
+      "is_interactive": true,
+      "title": "Transfer planner as a window (interactive)",
+      "w": 1920,
+      "x": 0,
+      "y": 1200
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-11-08T19:40:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "t1": {
+      "kind": "title1",
+      "maxW": 3920,
+      "text": "Intercept Window – full-bleed map, floating windows",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Local.dc.html",
+    "Transfer.dc.html",
+    "Input.dc.html"
+  ],
+  "pages": [],
+  "title": "Intercept Window – UI Mockups"
+}

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Input grammar and view rules</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans+Condensed:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#07090b}
+.iw{font-family:'IBM Plex Sans Condensed',system-ui,sans-serif;color:#e3e7ea;font-size:13px;line-height:1.4;background:#0b0e11}
+.iw *{box-sizing:border-box}
+.mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+.cap{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#8b96a1;font-weight:500}
+.pane{background:#0d1013;border:1px solid #1f252c;display:flex;flex-direction:column;min-height:0}
+.ph{height:28px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;border-bottom:1px solid #1f252c;background:#0f1317}
+.r{display:grid;grid-template-columns:150px minmax(0,1fr);column-gap:14px;padding:7px 12px;border-bottom:1px solid #151a1f;align-items:start}
+.r3{display:grid;grid-template-columns:110px 150px minmax(0,1fr);column-gap:12px;padding:6px 12px;border-bottom:1px solid #151a1f;align-items:center}
+.key{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#c4ccd3;border:1px solid #333c46;padding:0 4px;border-radius:2px;line-height:16px;display:inline-block;margin-right:3px}
+.d{color:#aab3bc}
+.sw{display:grid;grid-template-columns:28px 120px 80px minmax(0,1fr);column-gap:10px;align-items:center;padding:5px 12px;border-bottom:1px solid #151a1f}
+.box{width:28px;height:18px;border:1px solid #2c343d}
+li{margin:0 0 5px}
+</style>
+</helmet>
+<div class="iw" style="width: 1920px; height: 1080px; padding: 28px 32px; display: grid; grid-template-columns: 1.05fr 1fr 1fr; grid-template-rows: auto minmax(0, 1fr); gap: 18px; overflow: hidden">
+
+<div style="grid-column: 1 / 4; display: flex; align-items: baseline; gap: 18px; border-bottom: 1px solid #1f252c; padding-bottom: 14px">
+  <h1 style="margin: 0; font-size: 24px; font-weight: 600; letter-spacing: .02em">Input grammar and view rules</h1>
+  <span class="d">Fleetwright's click grammar on a solar-system map. No free camera; the view is always centred on something.</span>
+  <div style="flex: 1"></div>
+  <span class="mono" style="color: #6f7a85; font-size: 11px">Mockup v0.2 · Nov 8, 2026</span>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 18px; min-height: 0">
+  <section class="pane">
+    <div class="ph"><span class="cap" style="color: #c4ccd3">Mouse</span><span class="cap">same on every screen</span></div>
+    <div class="r"><span><span class="key">LMB</span></span><span><b style="font-weight: 600">Select.</b> <span class="d">An object on the map, a row in the outliner, a cell on a plot. Selecting opens the object's window as a preview (italic title), which the next selection replaces. Empty space clears the selection and closes the preview. Selecting never moves the camera.</span></span></div>
+    <div class="r"><span><span class="key">MMB</span></span><span><b style="font-weight: 600">Centre on what is under the cursor.</b> <span class="d">The one-button camera move: middle-click a planet, fleet or track, then wheel in. The camera glides there (0.7 s) and picks a sensible range. Selection and windows are left alone, so you can look somewhere without losing what you were working on.</span></span></div>
+    <div class="r"><span><span class="key">LMB</span><span class="key">LMB</span> or <span class="key">F</span></span><span><b style="font-weight: 600">Centre, alternatives.</b> <span class="d">Double-click also centres. F centres on the current selection. Middle-drag still orbits the camera; under 4 px of movement it counts as a click.</span></span></div>
+    <div class="r"><span><span class="key">RMB</span></span><span><b style="font-weight: 600">Act.</b> <span class="d">With an own group selected, opens its order menu for the thing under the cursor, default order first and in bold ("Plan transfer to Ceres…" opens the planner window). With nothing of ours selected: centre, or open a sticky window. On a porkchop: commit that solution.</span></span></div>
+    <div class="r"><span><span class="key">T</span><span class="key">R</span><span class="key">I</span><span class="key">W</span></span><span><b style="font-weight: 600">Arm an order</b> <span class="d">(transfer, rendezvous, intercept, shadow) from the command strip or a key. An amber banner shows it is armed. Then</span> <span class="key">LMB</span> <span class="d">on a valid target confirms it, and</span> <span class="key">RMB</span> <span class="d">or</span> <span class="key">Esc</span> <span class="d">cancels. An invalid target leaves the order armed and says why. No modal dialogs.</span></span></div>
+    <div class="r"><span>Drag, any button</span><span><b style="font-weight: 600">Orbit</b> <span class="d">the camera around the focus. A movement of 4 px or more makes it a drag, not a click. There is no panning.</span></span></div>
+    <div class="r"><span>Wheel</span><span><b style="font-weight: 600">Zoom toward the focus</b>, <span class="d">logarithmic: 0.14 decade per notch, 0.04 with</span> <span class="key">Ctrl</span><span class="d">. Eased, never stepped.</span></span></div>
+    <div class="r"><span>Breadcrumb</span><span><span class="mono" style="font-size: 12px">Sun › Earth › Moon › TF Kestrel</span> <span class="d">: click a crumb to centre on it. This is how you climb out.</span></span></div>
+    <div class="r"><span>Zoom ruler</span><span class="d">Click to jump to a range. The bands are marked on it.</span></div>
+    <div class="r"><span><span class="key">Esc</span> <span class="key">Del</span></span><span class="d">Esc cancels an armed order, then closes the top window. Delete closes every window that is not sticky (as in Transport Tycoon).</span></div>
+    <div class="r" style="border-bottom: 0"><span><span class="key">Space</span> <span class="key">Home</span> <span class="key">F2</span> <span class="key">F3</span> <span class="key">L</span></span><span class="d">Pause or 1 d/s · centre on the Sun · outliner · transfer planner · log.</span></div>
+  </section>
+
+  <section class="pane" style="flex: 1">
+    <div class="ph"><span class="cap" style="color: #c4ccd3">Never</span><span></span></div>
+    <ul style="margin: 10px 12px 0 30px; padding: 0" class="d">
+      <li>The camera never moves on its own: no jump to an event, no follow-cam toggle (Fleetwright decision 15). Events go to the log; the interest table decides whether the clock slows.</li>
+      <li>No free-floating camera position. Focus is an object, and the frame moves with it.</li>
+      <li>The zoom never changes the sim. Bands change only how things are drawn.</li>
+      <li>No popping. Moons, labels and small bodies fade in with their size on screen. "No hard cutoffs" holds in the UI too.</li>
+      <li>No order confirmations except the armed state and the default-first menu.</li>
+      <li>No permanent side panels. Information lives in windows the player opened, and Delete clears them.</li>
+    </ul>
+  </section>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 18px; min-height: 0">
+  <section class="pane">
+    <div class="ph"><span class="cap" style="color: #c4ccd3">Zoom bands</span><span class="cap">display only</span></div>
+    <div class="r3 cap" style="padding-top: 5px; padding-bottom: 5px"><span>Band</span><span>Camera range</span><span>What gets drawn</span></div>
+    <div class="r3"><span style="font-weight: 600">System</span><span class="mono" style="font-size: 12px">&gt; 60 Mm</span><span class="d">Planet orbits, small bodies as points, transit arcs, uncertainty arcs, rings in AU</span></div>
+    <div class="r3"><span style="font-weight: 600">Body</span><span class="mono" style="font-size: 12px">2–60 Mm</span><span class="d">Moon orbits fade in, sun line, stations, groups with counts</span></div>
+    <div class="r3"><span style="font-weight: 600">Orbit</span><span class="mono" style="font-size: 12px">30 000 km–2 Mm</span><span class="d">Lit spheres with hard terminators, 1 h velocity leaders, closest-approach markers</span></div>
+    <div class="r3"><span style="font-weight: 600">Engagement</span><span class="mono" style="font-size: 12px">50–30 000 km</span><span class="d">Individual hulls, weapon envelopes, intercept windows, group spread</span></div>
+    <div class="r3" style="border-bottom: 0"><span style="font-weight: 600">Ship</span><span class="mono" style="font-size: 12px">&lt; 50 km</span><span class="d">The eye-candy level: the hull's thermal state drawn as glow</span></div>
+  </section>
+
+  <section class="pane">
+    <div class="ph"><span class="cap" style="color: #c4ccd3">Symbols</span><span class="cap">the picture, not the truth</span></div>
+    <div class="sw"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4 L16 10 L10 16 L4 10 Z" fill="#06080a" stroke="#5cb8e6" stroke-width="1.5"></path><rect x="8.8" y="8.8" width="2.4" height="2.4" fill="#5cb8e6"></rect></svg><span>Own group</span><span class="mono" style="font-size: 11px; color: #5cb8e6">#5cb8e6</span><span class="d">Label carries the hull count</span></div>
+    <div class="sw"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><rect x="6" y="6" width="8" height="8" fill="#5cb8e6"></rect></svg><span>Own station</span><span class="mono" style="font-size: 11px; color: #5cb8e6">filled</span><span class="d">Depots, pickets, hubs</span></div>
+    <div class="sw"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4 L16 10 L10 16 L4 10 Z" fill="none" stroke="#c9ced4" stroke-width="1.5"></path></svg><span>Known, foreign</span><span class="mono" style="font-size: 11px; color: #c9ced4">#c9ced4</span><span class="d">Identity known; intent never shown as a colour</span></div>
+    <div class="sw"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="5" fill="none" stroke="#e0a040" stroke-width="1.5"></circle></svg><span>Unidentified track</span><span class="mono" style="font-size: 11px; color: #e0a040">#e0a040</span><span class="d">Label carries the light age</span></div>
+    <div class="sw"><svg width="28" height="14" viewBox="0 0 28 14" aria-hidden="true"><path d="M2 10 Q14 2 26 9" fill="none" stroke="rgba(201,206,212,.25)" stroke-width="7" stroke-linecap="round"></path></svg><span>Coasting arc</span><span class="mono" style="font-size: 11px; color: #9aa4ae">banana</span><span class="d">Along-track σ grows with age; width is cross-track σ</span></div>
+    <div class="sw"><svg width="28" height="14" viewBox="0 0 28 14" aria-hidden="true"><path d="M1 12 L27 2" stroke="#e0a040" stroke-width="1.2" stroke-dasharray="3 2" opacity=".7"></path></svg><span>Bearing only</span><span class="mono" style="font-size: 11px; color: #9aa4ae">needle</span><span class="d">One sensor: a line of sight with a range bracket, never a dot</span></div>
+    <div class="sw"><svg width="28" height="14" viewBox="0 0 28 14" aria-hidden="true"><path d="M2 2 L26 12 M2 12 L26 2" stroke="#e0a040" stroke-width="1" opacity=".55"></path><ellipse cx="14" cy="7" rx="5" ry="3" fill="none" stroke="#e0a040" stroke-dasharray="2 2"></ellipse></svg><span>Cross-fix</span><span class="mono" style="font-size: 11px; color: #9aa4ae">ellipse</span><span class="d">Two needles crossing; ellipse = range error R²σθ/B</span></div>
+    <div class="sw" style="border-bottom: 0"><svg width="28" height="14" viewBox="0 0 28 14" aria-hidden="true"><path d="M3 7 H25" stroke="#ffffff" stroke-dasharray="4 3"></path><rect x="1" y="5" width="4" height="4" fill="none" stroke="#fff"></rect><rect x="23" y="5" width="4" height="4" fill="none" stroke="#fff"></rect></svg><span>Closest approach</span><span class="mono" style="font-size: 11px; color: #9aa4ae">CPA</span><span class="d">Range and time, for the selected own group</span></div>
+  </section>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 18px; min-height: 0">
+  <section class="pane">
+    <div class="ph"><span class="cap" style="color: #c4ccd3">Tokens</span><span class="cap">one accent per meaning</span></div>
+    <div class="sw"><span class="box" style="background: #06080a"></span><span>Viewport</span><span class="mono" style="font-size: 11px">#06080a</span><span class="d">Space is black; no starfield noise</span></div>
+    <div class="sw"><span class="box" style="background: #0d1013"></span><span>Pane</span><span class="mono" style="font-size: 11px">#0d1013</span><span class="d">Docked, square, 1 px hairlines</span></div>
+    <div class="sw"><span class="box" style="background: #1f252c"></span><span>Hairline</span><span class="mono" style="font-size: 11px">#1f252c</span><span class="d">Separates; never shadows</span></div>
+    <div class="sw"><span class="box" style="background: #e3e7ea"></span><span>Text</span><span class="mono" style="font-size: 11px">#e3e7ea</span><span class="d">Values</span></div>
+    <div class="sw"><span class="box" style="background: #8b96a1"></span><span>Label</span><span class="mono" style="font-size: 11px">#8b96a1</span><span class="d">Keys, units, captions; 5.6:1 on pane</span></div>
+    <div class="sw"><span class="box" style="background: #5cb8e6"></span><span>Own</span><span class="mono" style="font-size: 11px">#5cb8e6</span><span class="d">Also "feasible" and selection-in-plot</span></div>
+    <div class="sw"><span class="box" style="background: #e0a040"></span><span>Uncertain</span><span class="mono" style="font-size: 11px">#e0a040</span><span class="d">Unknown, limiting, short, armed</span></div>
+    <div class="sw" style="border-bottom: 0"><span class="box" style="background: #ffffff"></span><span>Selection</span><span class="mono" style="font-size: 11px">#ffffff</span><span class="d">Corner brackets, never a fill</span></div>
+  </section>
+
+  <section class="pane">
+    <div class="ph"><span class="cap" style="color: #c4ccd3">Type</span><span></span></div>
+    <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 8px">
+      <div style="display: flex; align-items: baseline; gap: 12px"><span style="font-size: 17px; font-weight: 600">IBM Plex Sans Condensed</span><span class="d">names, labels, prose · 11–12 px · caps for section labels</span></div>
+      <div style="display: flex; align-items: baseline; gap: 12px"><span class="mono" style="font-size: 15px">IBM Plex Mono 12.63 km/s</span><span class="d">every number · tabular · right-aligned · unit always shown</span></div>
+    </div>
+  </section>
+
+  <section class="pane" style="flex: 1">
+    <div class="ph"><span class="cap" style="color: #c4ccd3">Windows</span><span class="cap">the map is the screen</span></div>
+    <ul style="margin: 10px 12px 0 30px; padding: 0" class="d">
+      <li>The map fills the screen. Chrome is four translucent plates: polity and launchers, centre breadcrumb, clock, and a one-line report ticker. Orders appear at the bottom only while one of our groups is selected.</li>
+      <li>Everything else is a floating window: group, station, track, body, transfer planner, outliner, log. Drag by the title bar; double-click it to roll the window up.</li>
+      <li>Group and station windows open on a live vignette, like a Transport Tycoon vehicle window, with a button column and a status bar that centres the map when clicked. The vignette shows the ships, so the map never needs to zoom that close.</li>
+      <li>The vignette is honest: own assets are live (formation compressed, real spread stated), foreign ones show registry imagery, and tracks show only the sensor's blob.</li>
+      <li>The transfer planner is a window. Its selected solution is drawn on the map as a dashed preview arc, with ghost markers for departure and arrival.</li>
+      <li>Only the ship designer and similar tools take the full screen.</li>
+    </ul>
+  </section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1920,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

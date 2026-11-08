@@ -1,0 +1,1028 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Map with floating windows</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans+Condensed:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#06080a}
+.iw{font-family:'IBM Plex Sans Condensed',system-ui,sans-serif;color:#e3e7ea;font-size:12px;line-height:1.35;-webkit-font-smoothing:antialiased;user-select:none}
+.iw *{box-sizing:border-box}
+.iw:focus{outline:none}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.cap{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#8b96a1;font-weight:500}
+.plate{position:absolute;display:flex;align-items:center;gap:10px;height:34px;padding:0 10px;background:rgba(10,13,16,.74);border:1px solid rgba(255,255,255,.07);border-radius:2px;backdrop-filter:blur(6px)}
+.ib{width:30px;height:26px;display:inline-flex;align-items:center;justify-content:center;background:transparent;border:1px solid transparent;border-radius:2px;color:#aab3bc;cursor:default;padding:0}
+.ib:hover{background:#1a2128;border-color:#2c353f;color:#ffffff}
+.ib.on{color:#5cb8e6;border-color:#24485e;background:#0f2230}
+.btn{height:24px;padding:0 9px;background:#141920;border:1px solid #29313a;color:#d6dce1;font:inherit;font-size:11.5px;cursor:default;display:inline-flex;align-items:center;gap:7px;border-radius:2px;text-decoration:none;white-space:nowrap}
+.btn:hover{background:#1b2229;border-color:#3a4551}
+.btn:disabled{color:#566069;background:#101317;border-color:#1f252c}
+.btn.on{background:#173041;border-color:#2f6a8c;color:#e8f5fc}
+.btn.pri{background:#173041;border-color:#2f6a8c;color:#e8f5fc}
+.key{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#8b96a1;border:1px solid #2c343d;padding:0 3px;border-radius:2px;line-height:13px}
+.rate{height:22px;padding:0 6px;background:transparent;border:1px solid transparent;color:#9aa4ae;font-family:'IBM Plex Mono',monospace;font-size:10.5px;border-radius:2px;cursor:default}
+.rate:hover{color:#ffffff;border-color:#2c353f}
+.rate.on{color:#e8f5fc;background:#173041;border-color:#2f6a8c}
+.crumb{background:transparent;border:0;color:#aab3bc;font:inherit;font-size:11.5px;padding:0 2px;cursor:default}
+.crumb:hover{color:#ffffff}
+.win{position:absolute;background:rgba(13,16,19,.97);border:1px solid #2a323b;border-radius:2px;box-shadow:0 12px 34px rgba(0,0,0,.5);display:flex;flex-direction:column;overflow:hidden}
+.wt{height:26px;flex:none;display:flex;align-items:center;gap:8px;padding:0 4px 0 9px;background:#12171c;border-bottom:1px solid #222a32;cursor:default}
+.wt .tt{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;letter-spacing:.02em}
+.wb{width:22px;height:20px;display:inline-flex;align-items:center;justify-content:center;background:transparent;border:0;color:#8b96a1;border-radius:2px;padding:0;cursor:default}
+.wb:hover{background:#222b34;color:#ffffff}
+.wb.on{color:#5cb8e6}
+.g{width:7px;height:7px;display:inline-block;flex:none}
+.g-fleet-own{border:1.5px solid #5cb8e6;transform:rotate(45deg)}
+.g-station-own{background:#5cb8e6}
+.g-fleet-other{border:1.5px solid #c9ced4;transform:rotate(45deg)}
+.g-station-other{border:1.5px solid #c9ced4}
+.g-unk{border:1.5px solid #e0a040;border-radius:50%;width:8px;height:8px}
+.g-body{background:#7d8892;border-radius:50%;width:7px;height:7px}
+.g-star{background:#f2ead6;border-radius:50%;width:8px;height:8px}
+.g-none{display:none}
+.wtab{height:24px;padding:0 10px;border:0;border-right:1px solid #1f252c;background:transparent;color:#8b96a1;font:inherit;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;font-weight:500;cursor:default}
+.wtab:hover{color:#d6dce1}
+.wtab.on{color:#e8f5fc;box-shadow:inset 0 -2px 0 #5cb8e6}
+.kv{display:grid;grid-template-columns:132px minmax(0,1fr);row-gap:3px;column-gap:10px;padding:8px 12px 10px}
+.kv .k{color:#8b96a1}
+.kv .v{font-family:'IBM Plex Mono',monospace;font-size:11px;font-variant-numeric:tabular-nums}
+.tr{display:grid;align-items:center;column-gap:8px;padding:0 12px;height:21px;border-bottom:1px solid #161b20}
+.tr .n{text-align:right;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-variant-numeric:tabular-nums}
+.tr .s{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb{height:24px;flex:none;display:flex;align-items:center;gap:8px;padding:0 10px;border:0;border-top:1px solid #222a32;background:#0f1418;font:inherit;font-size:11.5px;text-align:left;width:100%;cursor:default}
+.sb:hover{background:#141b21}
+.vcol{display:flex;flex-direction:column;gap:3px;padding:4px;border-left:1px solid #1f252c;background:#0f1317}
+.row{display:grid;grid-template-columns:14px minmax(0,1fr) auto;align-items:center;column-gap:7px;height:22px;padding:0 10px;border:0;background:transparent;color:inherit;font:inherit;text-align:left;width:100%;cursor:default}
+.row:hover{background:#141a20}
+.row .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .rt{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#9aa4ae;white-space:nowrap}
+.flt{height:22px;width:100%;background:#0b0e11;border:1px solid #262e36;color:#e3e7ea;font:inherit;font-size:11.5px;padding:0 8px;border-radius:2px}
+.flt::placeholder{color:#6f7a85}
+.mi{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center;width:100%;height:24px;padding:0 10px;background:transparent;border:0;color:#e3e7ea;font:inherit;font-size:12px;text-align:left;cursor:default}
+.mi:hover{background:#1c2a35}
+.mi.def{font-weight:600}
+.chk{display:grid;grid-template-columns:16px minmax(0,1fr) auto;column-gap:7px;align-items:start;padding:4px 0;cursor:default}
+.chk input{margin:2px 0 0;accent-color:#5cb8e6}
+.bar{height:4px;background:#1a2027;position:relative}
+.scroll::-webkit-scrollbar{width:8px}
+.scroll::-webkit-scrollbar-thumb{background:#242b33}
+</style>
+</helmet>
+<div class="iw" ref="{{setRoot}}" tabindex="0" onKeyDown="{{onKey}}" aria-label="Intercept Window map. Middle-click centres on the object under the cursor." style="position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #06080a; cursor: {{cursor}}">
+  <canvas ref="{{setCanvas}}" style="position: absolute; inset: 0; width: 100%; height: 100%; display: block" onMouseDown="{{onDown}}" onMouseMove="{{onMove}}" onMouseLeave="{{onLeave}}" onDoubleClick="{{onDbl}}" onContextMenu="{{onCtx}}"></canvas>
+
+  <div class="plate" style="left: 14px; top: 14px; padding-right: 4px">
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="#5cb8e6" stroke-width="1.2"></circle><path d="M1.5 8 H14.5" stroke="#5cb8e6" stroke-width="1.2"></path><circle cx="11.5" cy="8" r="1.6" fill="#5cb8e6"></circle></svg>
+    <span style="font-weight: 600; letter-spacing: .05em">AHTI MINING CHARTER</span>
+    <span class="mono" style="color: #9aa4ae; font-size: 11px">412.6 M€</span>
+    <span style="width: 1px; height: 20px; background: rgba(255,255,255,.08); margin: 0 2px"></span>
+    <button class="{{lOut}}" onClick="{{openOutliner}}" aria-label="Outliner (F2)" title="Outliner · F2"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" stroke-width="1.3" fill="none"></path></svg></button>
+    <button class="{{lPic}}" onClick="{{openPicture}}" aria-label="Picture (F6)" title="Picture · F6"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.2"></circle><circle cx="8" cy="8" r="2.5" fill="none" stroke="currentColor" stroke-width="1.2"></circle><path d="M8 8 L13 4" stroke="currentColor" stroke-width="1.2"></path></svg></button>
+    <button class="{{lTr}}" onClick="{{openTransfer}}" aria-label="Transfer planner (F3)" title="Transfer planner · F3"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="3" cy="12" r="1.6" fill="currentColor"></circle><circle cx="13" cy="4" r="1.6" fill="currentColor"></circle><path d="M3 12 C 3 5, 8 3, 13 4" stroke="currentColor" stroke-width="1.2" fill="none" stroke-dasharray="2 1.6"></path></svg></button>
+    <button class="ib" aria-label="Stations (F4)" title="Stations · F4"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="4" width="8" height="8" fill="none" stroke="currentColor" stroke-width="1.3"></rect><path d="M8 1v3M8 12v3M1 8h3M12 8h3" stroke="currentColor" stroke-width="1.2"></path></svg></button>
+    <button class="ib" aria-label="Ledger (F7)" title="Ledger · F7"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 13V8M7 13V4M11 13V6M14 13H2" stroke="currentColor" stroke-width="1.3" fill="none"></path></svg></button>
+    <button class="ib" aria-label="Polity (F8)" title="Polity · F8"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 14V2M4 3h8l-2 3 2 3H4" stroke="currentColor" stroke-width="1.3" fill="none"></path></svg></button>
+    <button class="ib" aria-label="Ship designer, full screen (F5)" title="Ship designer · F5 · full screen"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h9l3-2v4l-3-2M5 6v4M8 5v6" stroke="currentColor" stroke-width="1.2" fill="none"></path></svg></button>
+    <button class="{{lLog}}" onClick="{{openLog}}" aria-label="Log (L)" title="Log · L"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="2.5" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.2"></rect><path d="M5 6h6M5 8.5h6M5 11h4" stroke="currentColor" stroke-width="1.1"></path></svg></button>
+  </div>
+
+  <div class="plate" style="left: 50%; transform: translateX(-50%); top: 14px; gap: 6px">
+    <sc-for list="{{crumbs}}" as="c" hint-placeholder-count="2">
+      <sc-if value="{{c.sep}}" hint-placeholder-val="{{false}}"><span style="color: #4d5761">›</span></sc-if>
+      <button class="crumb" style="{{c.st}}" onClick="{{c.pick}}">{{c.name}}</button>
+    </sc-for>
+    <span style="width: 1px; height: 18px; background: rgba(255,255,255,.08); margin: 0 4px"></span>
+    <span class="cap" style="color: #c4ccd3">{{band}}</span>
+    <span class="mono" style="font-size: 11px; color: #9aa4ae">{{viewDist}}</span>
+  </div>
+
+  <div class="plate" style="right: 14px; top: 14px; gap: 8px">
+    <span class="mono" style="font-size: 10.5px; color: #e0a040">{{nextInterest}}</span>
+    <span style="width: 1px; height: 18px; background: rgba(255,255,255,.08)"></span>
+    <span class="mono" style="font-size: 13px; color: #ffffff">{{clock}}</span>
+    <div style="display: flex; gap: 1px">
+      <sc-for list="{{rates}}" as="rt" hint-placeholder-count="7">
+        <button class="{{rt.cls}}" onClick="{{rt.pick}}" aria-label="{{rt.aria}}">{{rt.label}}</button>
+      </sc-for>
+    </div>
+    <span class="cap" style="color: {{tierColor}}; min-width: 58px; text-align: right">{{tier}}</span>
+  </div>
+
+  <sc-if value="{{armedOn}}" hint-placeholder-val="{{false}}">
+    <div style="position: absolute; left: 50%; top: 58px; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; background: #2a1d08; border: 1px solid #a8742a; padding: 6px 12px; border-radius: 2px; color: #ffd9a0">
+      <span style="font-weight: 600; letter-spacing: .08em">{{armedVerb}}</span><span>{{armedText}}</span><span class="mono" style="font-size: 10.5px; color: #e9b979">LMB confirm · RMB / Esc cancel</span>
+    </div>
+  </sc-if>
+
+  <div style="position: absolute; right: 14px; top: 70px; bottom: 120px; width: 40px" aria-label="Zoom ruler">
+    <button style="position: absolute; inset: 0; background: transparent; border: 0; padding: 0; cursor: default" onClick="{{onRuler}}" aria-label="Set zoom"></button>
+    <div style="position: absolute; right: 4px; top: 0; bottom: 0; width: 1px; background: rgba(255,255,255,.1); pointer-events: none"></div>
+    <sc-for list="{{ticks}}" as="tk" hint-placeholder-count="10">
+      <div style="position: absolute; right: 4px; top: {{tk.top}}px; display: flex; align-items: center; gap: 3px; pointer-events: none; transform: translateY(-50%)"><span class="mono" style="font-size: 8.5px; color: #6f7a85">{{tk.label}}</span><span style="width: 4px; height: 1px; background: #4a545e"></span></div>
+    </sc-for>
+    <div style="position: absolute; right: 0; width: 10px; top: {{rulerTop}}px; height: 2px; background: #ffffff; pointer-events: none"></div>
+  </div>
+
+  <button style="position: absolute; left: 14px; bottom: 14px; max-width: 760px; height: 28px; display: flex; align-items: center; gap: 10px; padding: 0 10px; background: rgba(10,13,16,.74); border: 1px solid rgba(255,255,255,.07); border-radius: 2px; color: #e3e7ea; font: inherit; cursor: default" onClick="{{openLog}}" aria-label="Latest report; opens the log">
+    <span class="mono" style="font-size: 10.5px; color: #8b96a1">{{tick.t}}</span>
+    <span style="color: {{tick.scol}}; white-space: nowrap">{{tick.src}}</span>
+    <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #c4ccd3">{{tick.msg}}</span>
+  </button>
+
+  <sc-if value="{{ownSel}}" hint-placeholder-val="{{false}}">
+    <div class="plate" style="left: 50%; transform: translateX(-50%); bottom: 14px; height: 38px; gap: 6px">
+      <span class="g g-fleet-own" style="margin: 0 4px"></span>
+      <span style="font-weight: 600; min-width: 110px">{{selName}}</span>
+      <sc-for list="{{cmds}}" as="cm" hint-placeholder-count="6">
+        <button class="{{cm.cls}}" onClick="{{cm.run}}">{{cm.label}} <span class="key">{{cm.key}}</span></button>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <sc-for list="{{wins}}" as="w" hint-placeholder-count="0">
+    <section class="win" aria-label="{{w.title}}" style="left: {{w.x}}px; top: {{w.y}}px; width: {{w.w}}px; z-index: {{w.z}}; border-color: {{w.bcol}}" onMouseDown="{{w.raise}}">
+      <div class="wt" onMouseDown="{{w.drag}}" onDoubleClick="{{w.shade}}">
+        <span class="g {{w.gcls}}"></span>
+        <span class="tt" style="{{w.tst}}">{{w.title}}</span>
+        <span class="mono" style="font-size: 10px; color: #6f7a85">{{w.hint}}</span>
+        <sc-if value="{{w.canCentre}}" hint-placeholder-val="{{false}}"><button class="wb" onClick="{{w.centre}}" aria-label="Centre map on this" title="Centre map · F"><svg width="13" height="13" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="4" fill="none" stroke="currentColor" stroke-width="1.2"></circle><path d="M7 0v3M7 11v3M0 7h3M11 7h3" stroke="currentColor" stroke-width="1.2"></path></svg></button></sc-if>
+        <button class="{{w.pinCls}}" onClick="{{w.pin}}" aria-label="Keep this window (sticky)" title="Sticky: survives Delete and new selections"><svg width="13" height="13" viewBox="0 0 14 14" aria-hidden="true"><path d="M5 1.5h4l-.6 4 2.6 2.2H3l2.6-2.2z M7 7.7V13" stroke="currentColor" stroke-width="1.2" fill="{{w.pinFill}}"></path></svg></button>
+        <button class="wb" onClick="{{w.close}}" aria-label="Close window" title="Close · Esc"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke="currentColor" stroke-width="1.3"></path></svg></button>
+      </div>
+      <sc-if value="{{w.open}}" hint-placeholder-val="{{true}}">
+
+        <sc-if value="{{w.hasView}}" hint-placeholder-val="{{false}}">
+          <div style="display: flex; border-bottom: 1px solid #1f252c">
+            <canvas ref="{{w.cvRef}}" style="display: block; width: {{w.vw}}px; height: {{w.vh}}px; background: #000000"></canvas>
+            <sc-if value="{{w.hasCol}}" hint-placeholder-val="{{false}}">
+              <div class="vcol">
+                <sc-for list="{{w.col}}" as="vb" hint-placeholder-count="4">
+                  <button class="ib" onClick="{{vb.run}}" aria-label="{{vb.label}}" title="{{vb.label}}" style="width: 28px; height: 28px">{{vb.glyph}}</button>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{w.hasTabs}}" hint-placeholder-val="{{false}}">
+          <div style="display: flex; border-bottom: 1px solid #1f252c; background: #0f1317">
+            <sc-for list="{{w.tabs}}" as="tb" hint-placeholder-count="3"><button class="{{tb.cls}}" onClick="{{tb.pick}}">{{tb.label}}</button></sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{w.showShips}}" hint-placeholder-val="{{false}}">
+          <div class="tr cap" style="grid-template-columns: minmax(0, 1fr) 70px 46px 46px 38px; border-bottom: 1px solid #222931"><span>Ship · class</span><span style="text-align: right">Δv km/s</span><span style="text-align: right">Prop</span><span style="text-align: right">m/s²</span><span style="text-align: right">State</span></div>
+          <sc-for list="{{w.ships}}" as="sh" hint-placeholder-count="3">
+            <div class="tr" style="grid-template-columns: minmax(0, 1fr) 70px 46px 46px 38px; height: 30px">
+              <span class="s" style="display: flex; flex-direction: column; line-height: 1.15"><span>{{sh.name}}</span><span style="color: #8b96a1; font-size: 10.5px">{{sh.cls}}</span></span>
+              <span class="n" style="color: {{sh.dvCol}}">{{sh.dv}}</span><span class="n">{{sh.prop}}</span><span class="n">{{sh.acc}}</span><span class="n" style="color: {{sh.stCol}}">{{sh.st}}</span>
+            </div>
+          </sc-for>
+        </sc-if>
+
+        <sc-if value="{{w.showOrders}}" hint-placeholder-val="{{false}}">
+          <sc-for list="{{w.orders}}" as="od" hint-placeholder-count="2">
+            <div class="tr" style="grid-template-columns: 18px minmax(0, 1fr) auto; height: 24px"><span class="mono" style="color: #6f7a85; font-size: 10.5px">{{od.n}}</span><span class="s" style="color: {{od.col}}">{{od.text}}</span><span class="mono" style="font-size: 10.5px; color: #9aa4ae">{{od.when}}</span></div>
+          </sc-for>
+          <div style="padding: 8px 12px; display: flex; gap: 6px"><button class="btn" onClick="{{w.planTr}}">Plan transfer…</button><button class="btn">Edit doctrine…</button></div>
+        </sc-if>
+
+        <sc-if value="{{w.showKv}}" hint-placeholder-val="{{false}}">
+          <div class="kv">
+            <sc-for list="{{w.kv}}" as="kv" hint-placeholder-count="6"><span class="k">{{kv.k}}</span><span class="v" style="color: {{kv.c}}">{{kv.v}}</span></sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{w.showStock}}" hint-placeholder-val="{{false}}">
+          <div class="tr cap" style="grid-template-columns: minmax(0, 1fr) 80px 60px; border-bottom: 1px solid #222931"><span>Stock</span><span style="text-align: right">t</span><span style="text-align: right">per day</span></div>
+          <sc-for list="{{w.stock}}" as="sk" hint-placeholder-count="4">
+            <div class="tr" style="grid-template-columns: minmax(0, 1fr) 80px 60px"><span class="s">{{sk.name}}</span><span class="n">{{sk.q}}</span><span class="n" style="color: {{sk.col}}">{{sk.d}}</span></div>
+          </sc-for>
+        </sc-if>
+
+        <sc-if value="{{w.showCls}}" hint-placeholder-val="{{false}}">
+          <div style="padding: 8px 12px 6px; display: flex; flex-direction: column; gap: 5px">
+            <span class="cap">Classification · picture</span>
+            <sc-for list="{{w.cls}}" as="cl" hint-placeholder-count="3">
+              <div style="display: grid; grid-template-columns: 120px minmax(0, 1fr) 36px; gap: 8px; align-items: center"><span>{{cl.label}}</span><div class="bar"><div style="position: absolute; left: 0; top: 0; bottom: 0; width: {{cl.w}}%; background: {{cl.col}}"></div></div><span class="mono" style="font-size: 10.5px; text-align: right">{{cl.p}}</span></div>
+            </sc-for>
+          </div>
+          <div class="tr cap" style="grid-template-columns: minmax(0, 1fr) 80px 66px; border-top: 1px solid #1f252c; border-bottom: 1px solid #222931"><span>Source</span><span>Kind</span><span style="text-align: right">Light age</span></div>
+          <sc-for list="{{w.srcs}}" as="sr" hint-placeholder-count="2">
+            <div class="tr" style="grid-template-columns: minmax(0, 1fr) 80px 66px"><span class="s">{{sr.name}}</span><span style="color: #9aa4ae">{{sr.kind}}</span><span class="n" style="color: {{sr.col}}">{{sr.age}}</span></div>
+          </sc-for>
+          <div style="padding: 8px 12px; display: flex; gap: 6px"><button class="btn">Task picket to stare</button><button class="btn">Go active (lidar)…</button></div>
+        </sc-if>
+
+        <sc-if value="{{w.isTransfer}}" hint-placeholder-val="{{false}}">
+          <div style="display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-bottom: 1px solid #1f252c">
+            <span class="cap">From</span><span class="btn" style="background: #0b0e11">{{w.trFrom}}</span>
+            <span style="color: #6f7a85">→</span>
+            <span class="cap">To</span><span class="btn" style="background: #0b0e11">{{w.trTo}}</span>
+            <button class="btn" onClick="{{w.retarget}}">Pick on map</button>
+            <div style="flex: 1"></div>
+            <span class="mono" style="font-size: 10px; color: #6f7a85">Lambert · impulsive</span>
+          </div>
+          <sc-if value="{{w.trMsgOn}}" hint-placeholder-val="{{false}}"><div style="padding: 18px 12px; color: #c4ccd3">{{w.trMsg}}</div></sc-if>
+          <sc-if value="{{w.trOk}}" hint-placeholder-val="{{true}}">
+            <canvas ref="{{w.pcRef}}" style="display: block; width: 640px; height: 290px; cursor: crosshair" onMouseMove="{{w.pcMove}}" onMouseLeave="{{w.pcLeave}}" onMouseUp="{{w.pcUp}}" onContextMenu="{{w.noCtx}}"></canvas>
+            <canvas ref="{{w.wsRef}}" style="display: block; width: 640px; height: 54px; border-top: 1px solid #1f252c; cursor: default" onMouseUp="{{w.wsUp}}"></canvas>
+            <div style="display: grid; grid-template-columns: minmax(0, 1fr) 250px; border-top: 1px solid #1f252c">
+              <div class="kv" style="grid-template-columns: 120px minmax(0, 1fr); padding-top: 7px">
+                <sc-for list="{{w.trKv}}" as="kv" hint-placeholder-count="7"><span class="k">{{kv.k}}</span><span class="v" style="color: {{kv.c}}">{{kv.v}}</span></sc-for>
+              </div>
+              <div style="border-left: 1px solid #1f252c; padding: 7px 12px">
+                <div class="cap" style="margin-bottom: 3px">Before departure</div>
+                <sc-for list="{{w.trOpts}}" as="op" hint-placeholder-count="3">
+                  <label class="chk"><input type="checkbox" checked="{{op.on}}" onChange="{{op.toggle}}"><span style="font-size: 11.5px">{{op.label}}</span><span class="mono" style="font-size: 10.5px; color: #5cb8e6">{{op.eff}}</span></label>
+                </sc-for>
+                <div style="margin-top: 6px; display: grid; grid-template-columns: 1fr auto; row-gap: 2px; font-size: 11px">
+                  <span style="color: #8b96a1">Group Δv</span><span class="mono">{{w.trFleet}}</span>
+                  <span style="color: #8b96a1">Reserve</span><span class="mono">0.30</span>
+                  <span style="color: #8b96a1">Plannable</span><span class="mono" style="color: #5cb8e6">{{w.trCap}}</span>
+                </div>
+              </div>
+            </div>
+            <div style="border-top: 1px solid #1f252c; padding: 5px 12px 7px; display: flex; flex-direction: column; gap: 2px">
+              <sc-for list="{{w.trBurns}}" as="b" hint-placeholder-count="3">
+                <div style="display: grid; grid-template-columns: 16px minmax(0, 1fr) 76px 52px 56px; gap: 8px; font-size: 11.5px"><span class="mono" style="color: #6f7a85">{{b.n}}</span><span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{b.ev}}</span><span class="mono" style="font-size: 10.5px">{{b.when}}</span><span class="mono" style="font-size: 10.5px; text-align: right">{{b.dv}}</span><span class="mono" style="font-size: 10.5px; text-align: right; color: #9aa4ae">{{b.dur}}</span></div>
+              </sc-for>
+            </div>
+            <div style="border-top: 1px solid #1f252c; padding: 7px 10px; display: flex; align-items: center; gap: 8px">
+              <button class="btn pri" onClick="{{w.commit}}">Commit <span class="key" style="color: #cfe9f7; border-color: #2f6a8c">RMB</span></button>
+              <button class="btn">Queue after task</button>
+              <span style="flex: 1; font-size: 11px; color: {{w.trNoteCol}}; text-align: right">{{w.trNote}}</span>
+            </div>
+          </sc-if>
+        </sc-if>
+
+        <sc-if value="{{w.isOutliner}}" hint-placeholder-val="{{false}}">
+          <div style="padding: 7px 10px; border-bottom: 1px solid #1f252c"><input class="flt" aria-label="Filter" placeholder="Filter by name, place, owner" value="{{w.filter}}" onChange="{{w.onFilter}}"></div>
+          <div class="scroll" style="max-height: 470px; overflow-y: auto; padding-bottom: 6px">
+            <sc-for list="{{w.rows}}" as="r" hint-placeholder-count="8">
+              <sc-if value="{{r.isHead}}" hint-placeholder-val="{{false}}"><div class="cap" style="padding: 9px 10px 3px; display: flex; justify-content: space-between"><span>{{r.name}}</span><span class="mono" style="letter-spacing: 0">{{r.right}}</span></div></sc-if>
+              <sc-if value="{{r.isRow}}" hint-placeholder-val="{{true}}">
+                <button class="row" style="{{r.st}}" onClick="{{r.pick}}" onDoubleClick="{{r.centre}}"><span class="g {{r.gcls}}"></span><span class="nm" style="padding-left: {{r.indent}}px">{{r.name}}</span><span class="rt" style="color: {{r.rcol}}">{{r.right}}</span></button>
+              </sc-if>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{w.isLog}}" hint-placeholder-val="{{false}}">
+          <div class="scroll" style="max-height: 300px; overflow-y: auto">
+            <sc-for list="{{w.log}}" as="lg" hint-placeholder-count="6">
+              <div style="display: grid; grid-template-columns: 96px 58px 132px minmax(0, 1fr); gap: 10px; padding: 4px 10px; border-bottom: 1px solid #141a1f; align-items: start">
+                <span class="mono" style="font-size: 10.5px; color: #9aa4ae">{{lg.t}}</span><span class="mono" style="font-size: 10.5px; color: {{lg.acol}}">{{lg.age}}</span><span style="color: {{lg.scol}}">{{lg.src}}</span><span style="color: #d6dce1">{{lg.msg}}</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{w.hasStatus}}" hint-placeholder-val="{{false}}">
+          <button class="sb" onClick="{{w.statusClick}}" style="color: {{w.stCol}}"><span class="cap" style="color: {{w.stCol}}">{{w.status}}</span><span style="color: #c4ccd3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{w.statusText}}</span></button>
+        </sc-if>
+      </sc-if>
+    </section>
+  </sc-for>
+
+  <sc-if value="{{menuOn}}" hint-placeholder-val="{{false}}">
+    <div style="position: absolute; z-index: 900; left: {{menuX}}px; top: {{menuY}}px; min-width: 260px; background: #10161b; border: 1px solid #36424e; border-radius: 2px; padding: 4px 0; box-shadow: 0 6px 20px rgba(0,0,0,.5)">
+      <div class="cap" style="padding: 3px 10px 5px; border-bottom: 1px solid #1f252c; margin-bottom: 3px">{{menuTitle}}</div>
+      <sc-for list="{{menuItems}}" as="mi" hint-placeholder-count="3"><button class="{{mi.cls}}" onClick="{{mi.run}}"><span>{{mi.label}}</span><span class="mono" style="font-size: 10.5px; color: #8b96a1">{{mi.hint}}</span></button></sc-for>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{loading}}" hint-placeholder-val="{{false}}">
+    <div class="mono" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); color: #8b96a1; font-size: 11px">Loading body catalogue…</div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"initWindows":{"editor":"enum","options":["none","units","transfer"],"default":"none"},"initFocus":{"editor":"enum","options":["sun","earth","moon","1-ceres","tf-kestrel"],"default":"sun"},"initSelect":{"editor":"text","default":""},"initLogD":{"editor":"float","min":1,"max":10.4,"step":0.1,"default":8.95},"initPitch":{"editor":"float","min":-1.4,"max":1.4,"step":0.05,"default":0.62},"initYaw":{"editor":"float","min":-3.2,"max":3.2,"step":0.05,"default":-1.9},"$preview":{"width":1920,"height":1080}}'>
+var BODIES_URL = '/_blob/3b5340be21b1b3b1172132afa307251e';
+var D2R = Math.PI / 180, MU_SUN = 132712440018, AU = 149597870.7, CKMS = 299792.458, VE = 9.6;
+var VW = 1920, VH = 1080;
+var COL = { own: '#5cb8e6', other: '#c9ced4', unk: '#e0a040' };
+var BODY_COL = { sun: '#f6efdc', mercury: '#9b958d', venus: '#cdbf9c', earth: '#7193b4', moon: '#a8a6a1', mars: '#b8774f', jupiter: '#c6ab86', saturn: '#cfbd93', uranus: '#9cbcc1', neptune: '#7189bb', '1-ceres': '#8f8a83', io: '#c9b56a', europa: '#c2b8a6', titan: '#c2a060' };
+var PARK = { '1-ceres': 1500, mars: 3800, moon: 1837 };
+var WIN_W = { fleet: 440, station: 420, contact: 390, body: 360, transfer: 662, outliner: 340, log: 700 };
+
+function pad2(n) { return (n < 10 ? '0' : '') + n; }
+function jdToStr(jd) { var d = new Date((jd - 2440587.5) * 86400000); return d.getUTCFullYear() + '-' + pad2(d.getUTCMonth() + 1) + '-' + pad2(d.getUTCDate()) + ' ' + pad2(d.getUTCHours()) + ':' + pad2(d.getUTCMinutes()) + ':' + pad2(d.getUTCSeconds()); }
+function jdDate(jd) { return jdToStr(jd).slice(0, 10); }
+function strToJd(s) { return Date.parse(s + 'T00:00:00Z') / 86400000 + 2440587.5; }
+function fmtInt(x) { return Math.round(x).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
+function fmtKm(km) { if (km < 1e8) return fmtInt(km) + ' km'; return (km / AU).toFixed(km < 1.5e9 ? 3 : 2) + ' AU'; }
+function fmtDur(s) { var neg = s < 0; s = Math.abs(s); var o; if (s < 60) o = s.toFixed(1) + ' s'; else if (s < 3600) o = Math.floor(s / 60) + 'm ' + pad2(Math.floor(s % 60)) + 's'; else if (s < 86400) o = Math.floor(s / 3600) + 'h ' + pad2(Math.floor(s % 3600 / 60)) + 'm'; else o = Math.floor(s / 86400) + 'd ' + pad2(Math.floor(s % 86400 / 3600)) + 'h'; return (neg ? '−' : '') + o; }
+function fmtHM(s) { return Math.floor(s / 3600) + 'h ' + pad2(Math.round(s % 3600 / 60)) + 'm'; }
+function sub3(a, b) { return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]; }
+function len3(a) { return Math.sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]); }
+function solveKepler(M, e) { M = M % (2 * Math.PI); if (M < 0) M += 2 * Math.PI; var E = e < 0.8 ? M : Math.PI; for (var k = 0; k < 30; k++) { var dE = (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E)); E -= dE; if (Math.abs(dE) < 1e-12) break; } return E; }
+function elemPosE(el, jd, E, out) {
+  var dt = jd - el.ep, e = el.e, W = (el.node + el.nr * dt) * D2R, w = (el.argp + el.ar * dt) * D2R, i = el.i * D2R, a = el.a;
+  var xp = a * (Math.cos(E) - e), yp = a * Math.sqrt(1 - e * e) * Math.sin(E);
+  var cw = Math.cos(w), sw = Math.sin(w), cW = Math.cos(W), sW = Math.sin(W), ci = Math.cos(i), si = Math.sin(i), x1 = cw * xp - sw * yp, y1 = sw * xp + cw * yp;
+  out[0] = cW * x1 - sW * ci * y1; out[1] = sW * x1 + cW * ci * y1; out[2] = si * y1; return out;
+}
+function elemPos(el, jd, out) { return elemPosE(el, jd, solveKepler((el.M0 + el.n * (jd - el.ep)) * D2R, el.e), out || [0, 0, 0]); }
+function elemVel(el, jd) { var h = 60 / 86400, a = elemPos(el, jd - h), b = elemPos(el, jd + h); return [(b[0] - a[0]) / 120, (b[1] - a[1]) / 120, (b[2] - a[2]) / 120]; }
+function rv2el(r, v, mu, jd) {
+  var R = len3(r), V2 = v[0] * v[0] + v[1] * v[1] + v[2] * v[2], h = [r[1] * v[2] - r[2] * v[1], r[2] * v[0] - r[0] * v[2], r[0] * v[1] - r[1] * v[0]], H = len3(h);
+  var nn = [-h[1], h[0], 0], N = Math.hypot(nn[0], nn[1]), rv = r[0] * v[0] + r[1] * v[1] + r[2] * v[2];
+  var ev = [0, 1, 2].map(function (k) { return ((V2 - mu / R) * r[k] - rv * v[k]) / mu; }), e = len3(ev), a = 1 / (2 / R - V2 / mu), i = Math.acos(h[2] / H), W = Math.atan2(nn[1], nn[0]);
+  var w = Math.acos(Math.max(-1, Math.min(1, (nn[0] * ev[0] + nn[1] * ev[1]) / (N * e)))); if (ev[2] < 0) w = 2 * Math.PI - w;
+  var nu = Math.acos(Math.max(-1, Math.min(1, (ev[0] * r[0] + ev[1] * r[1] + ev[2] * r[2]) / (e * R)))); if (rv < 0) nu = 2 * Math.PI - nu;
+  var E = 2 * Math.atan(Math.sqrt((1 - e) / (1 + e)) * Math.tan(nu / 2)), M = E - e * Math.sin(E);
+  return { a: a, e: e, i: i / D2R, node: W / D2R, argp: w / D2R, M0: M / D2R, n: Math.sqrt(mu / (a * a * a)) * 86400 / D2R, ep: jd, nr: 0, ar: 0 };
+}
+function stumpC(z) { if (z > 1e-6) return (1 - Math.cos(Math.sqrt(z))) / z; if (z < -1e-6) return (Math.cosh(Math.sqrt(-z)) - 1) / (-z); return 0.5 - z / 24; }
+function stumpS(z) { if (z > 1e-6) { var s = Math.sqrt(z); return (s - Math.sin(s)) / (s * s * s); } if (z < -1e-6) { var s2 = Math.sqrt(-z); return (Math.sinh(s2) - s2) / (s2 * s2 * s2); } return 1 / 6 - z / 120; }
+function lambert(r1, r2, tof, mu) {
+  var R1 = len3(r1), R2 = len3(r2), cz = r1[0] * r2[1] - r1[1] * r2[0];
+  var dth = Math.acos(Math.max(-1, Math.min(1, (r1[0] * r2[0] + r1[1] * r2[1] + r1[2] * r2[2]) / (R1 * R2)))); if (cz < 0) dth = 2 * Math.PI - dth;
+  var A = Math.sin(dth) * Math.sqrt(R1 * R2 / (1 - Math.cos(dth))); if (Math.abs(A) < 1e-9) return null;
+  function yz(z) { return R1 + R2 + A * (z * stumpS(z) - 1) / Math.sqrt(stumpC(z)); }
+  function tz(z) { var y = yz(z); if (y < 0) return -1; return (Math.pow(y / stumpC(z), 1.5) * stumpS(z) + A * Math.sqrt(y)) / Math.sqrt(mu); }
+  var lo = -4 * Math.PI * Math.PI, hi = 4 * Math.PI * Math.PI - 1e-6, g0 = 0; while (yz(lo) < 0 && g0++ < 300) lo += 0.1;
+  var z = 0; for (var k = 0; k < 70; k++) { z = 0.5 * (lo + hi); var t = tz(z); if (t < 0 || t <= tof) lo = z; else hi = z; if (hi - lo < 1e-8) break; }
+  var y = yz(z); if (y < 0) return null;
+  var f = 1 - y / R1, g = A * Math.sqrt(y / mu), gd = 1 - y / R2;
+  return [[(r2[0] - f * r1[0]) / g, (r2[1] - f * r1[1]) / g, (r2[2] - f * r1[2]) / g], [(gd * r2[0] - r1[0]) / g, (gd * r2[1] - r1[1]) / g, (gd * r2[2] - r1[2]) / g]];
+}
+var NOW0 = strToJd('2043-01-20') + 0.2795;
+function orbitAround(W, pid, a, e, i, node, argp, M0) { var mu = W.BI[pid].gm; return { a: a, e: e, i: i, node: node, argp: argp, M0: M0, n: Math.sqrt(mu / (a * a * a)) * 86400 / D2R, ep: NOW0, nr: 0, ar: 0 }; }
+function shipDv(s, prop) { return VE * Math.log((s.dry + prop) / s.dry); }
+
+function buildWorld(rows) {
+  var W = { B: [], BI: {}, O: {}, list: [] };
+  rows.forEach(function (r, i) { var b = { i: i, id: r[0], name: r[1], par: r[2], cat: r[3], R: r[4], gm: r[5], el: { a: r[6], e: r[7], i: r[8], node: r[9], argp: r[10], M0: r[11], n: r[12], ep: r[13], nr: r[14], ar: r[15] }, soi: r[16], kind: 'body', side: 'body' }; W.B.push(b); W.BI[b.id] = b; W.O[b.id] = b; });
+  var A = [
+    { id: 'tf-kestrel', name: 'TF Kestrel', kind: 'fleet', side: 'own', parent: 'moon', where: 'Luna · NRHO', orbit: orbitAround(W, 'moon', 38237, 0.876, 88, 40, 270, 150), status: 'ON TASK', statusText: 'Station-keeping NRHO · shadowing UNSA Resolute', doctrine: 'Escort · weapons tight', posture: 'Nose to threat axis', spread: '42 km', conn: false, opts: { topUp: false, xfer: false, drop: false },
+      ships: [{ name: 'IWS Väinämöinen', cls: 'Kantele escort · NTR', kind: 'escort', dry: 610, prop: 1720, cap: 1720, thrust: 3050, st: 'OK' }, { name: 'IWS Ilmarinen', cls: 'Kantele escort · NTR', kind: 'escort', dry: 625, prop: 1705, cap: 1720, thrust: 3050, st: 'OK' }, { name: 'IWS Sampo', cls: 'Aallotar tanker · NTR', kind: 'tanker', dry: 780, prop: 2400, cap: 2400, thrust: 2800, st: 'OK' }, { name: 'IWS Louhi', cls: 'Tuuri survey · NTR', kind: 'survey', dry: 540, prop: 1240, cap: 1560, thrust: 2530, st: 'LOW' }],
+      orders: [{ text: 'Station-keep NRHO, shadow UNSA Resolute', when: 'now' }, { text: 'Top up H₂ at Shackleton Depot', when: '02-02' }] },
+    { id: 'shackleton', name: 'Shackleton Depot', kind: 'station', side: 'own', parent: 'moon', where: 'Luna · south pole', surface: [0.12, 0.05, -1], scene: 'moon', status: 'PRODUCING', statusText: 'Polar ice plant · H₂ +118 t/d · 2 docked',
+      stock: [{ name: 'Hydrogen (H₂, liquid)', q: '4 810', d: '+118' }, { name: 'Oxygen (LOX)', q: '31 200', d: '+640' }, { name: 'Water', q: '2 240', d: '−40' }, { name: 'Vitamins (Earth parts)', q: '86', d: '−0.4' }] },
+    { id: 'picket-p3', name: 'Picket P-3', kind: 'station', side: 'own', parent: 'sun', where: 'Sun–Earth L5', lagr: { body: 'earth', ang: -60 }, scene: 'picket', status: 'STARING', statusText: '4 m IR telescope · sector 095–130° · 2 tracks', stock: [{ name: 'Neon coolant', q: '3.1', d: '−0.002' }, { name: 'Station-keeping Xe', q: '0.42', d: '−0.0003' }] },
+    { id: 'survey-ahti', name: 'Survey Grp Ahti', kind: 'fleet', side: 'own', parent: 'sun', where: 'Earth → Ceres', transit: { from: 'earth', to: '1-ceres', dep: strToJd('2042-03-10'), tof: 400 }, status: 'IN TRANSIT', statusText: 'Coasting to Ceres · capture burn 2043-04-14', doctrine: 'Survey · weapons hold', posture: 'Cold coast', spread: '8 km', conn: false,
+      ships: [{ name: 'IWS Ilmatar', cls: 'Tuuri survey · NTR', kind: 'survey', dv: 5.21, prop: 41, acc: 1.48, st: 'OK' }, { name: 'IWS Tapio', cls: 'Kaira prospector · SEP', kind: 'sep', dv: 18.6, prop: 72, acc: 0.004, st: 'OK' }],
+      orders: [{ text: 'Coast to Ceres (Lambert arc, 400 d)', when: 'now' }, { text: 'Capture burn, Ceres 1 500 km orbit', when: '04-14' }, { text: 'Survey fields C-3, C-7 (radar, gamma)', when: '04-20' }] },
+    { id: 'haul-3', name: 'Haul Train 3', kind: 'fleet', side: 'own', parent: '1-ceres', where: 'Ceres · 1 470 km', orbit: orbitAround(W, '1-ceres', 1470, 0.01, 12, 80, 0, 40), status: 'LOADING', statusText: 'Water cans 5 of 8 filled at Ceres Hub', doctrine: 'Merchant · unarmed', posture: '—', spread: '2 km', conn: false,
+      ships: [{ name: 'Tug Kaleva 4', cls: 'Solar-thermal water tug', kind: 'tug', dv: 3.4, prop: 64, acc: 0.09, st: 'OK' }, { name: 'Tug Kaleva 6', cls: 'Solar-thermal water tug', kind: 'tug', dv: 3.6, prop: 70, acc: 0.09, st: 'OK' }, { name: '8 × cargo can', cls: '400 t water each', kind: 'cans', dv: 0, prop: 0, acc: 0, st: '5/8' }],
+      orders: [{ text: 'Load water at Ceres Hub', when: 'now' }, { text: 'Low-thrust spiral to cislunar depot', when: 'Mar' }] },
+    { id: 'ceres-hub', name: 'Ceres Hub', kind: 'station', side: 'own', parent: '1-ceres', where: 'Ceres · Occator rim', surface: [0.75, 0.62, 0.2], scene: 'ceres', status: 'MINING', statusText: 'Ice pit 3 · water +95 t/d · Haul Train 3 loading', stock: [{ name: 'Water ice (mined)', q: '58 300', d: '+410' }, { name: 'Water (purified)', q: '6 900', d: '+95' }, { name: 'Hydrogen (H₂)', q: '320', d: '+11' }, { name: 'Ammonia', q: '1 140', d: '+6' }] },
+    { id: 'unsa-gw', name: 'UNSA Gateway', kind: 'station', side: 'other', parent: 'moon', where: 'Luna · NRHO', owner: 'UN Space Authority', orbit: orbitAround(W, 'moon', 38237, 0.876, 88, 40, 270, 330), scene: 'orbital' },
+    { id: 'unsa-resolute', name: 'UNSA Resolute', kind: 'fleet', side: 'other', parent: 'moon', where: 'Cislunar · approaching', owner: 'UN Space Authority', linear: { r0: [-58000, 21000, 7400], v: [1.1719, -0.4051, 1.3052] }, cls: 'Inspection cutter (registered)', age: 1.3, ships: [{ name: 'UNSA Resolute', cls: 'Inspection cutter, registered', kind: 'escort' }] },
+    { id: 'deimos-yard', name: 'Deimos Yard', kind: 'station', side: 'other', parent: 'deimos', where: 'Mars · Deimos', owner: 'Tharsis Compact', surface: [1, 0, 0], scene: 'ceres' },
+    { id: 'unsa-p4', name: 'UNSA Patrol 4', kind: 'contact', side: 'other', parent: 'sun', where: 'Coasting, Earth → Mars', track: 'group', owner: 'UN Space Authority', orbit: { a: 1.31 * AU, e: 0.24, i: 1.1, node: 48, argp: 12, M0: 62, n: 0, ep: NOW0, nr: 0, ar: 0 }, sigM: 0.9, sigX: 42000, age: 8640 },
+    { id: 'u-0412', name: 'U-0412', kind: 'contact', side: 'unk', parent: 'sun', where: 'Inner belt · burning', track: 'fix', sensors: ['picket-p3', 'ceres-hub'], age: 372 },
+    { id: 'u-0419', name: 'U-0419', kind: 'contact', side: 'unk', parent: 'sun', where: 'Bearing only', track: 'bearing', sensors: ['picket-p3'], age: 520, rmin: 1.5 * AU, rmax: 4.5 * AU }
+  ];
+  A.forEach(function (o) { W.O[o.id] = o; W.list.push(o); });
+  var p4 = W.O['unsa-p4'].orbit; p4.n = Math.sqrt(MU_SUN / (p4.a * p4.a * p4.a)) * 86400 / D2R;
+  var ce = W.BI['1-ceres'].el, o412 = { a: 2.52 * AU, e: 0.12, i: 6.5, node: ce.node + 4, argp: ce.argp, M0: 0, n: Math.sqrt(MU_SUN / Math.pow(2.52 * AU, 3)) * 86400 / D2R, ep: NOW0, nr: 0, ar: 0 };
+  var cpos = elemPos(ce, NOW0), g = elemPos(o412, NOW0); o412.M0 = Math.atan2(cpos[1], cpos[0]) / D2R + 9 - Math.atan2(g[1], g[0]) / D2R; W.O['u-0412'].orbit = o412;
+  W.O['u-0419'].dirTo = elemPos(W.BI.jupiter.el, NOW0);
+  var t = W.O['survey-ahti'].transit, r1 = elemPos(W.BI.earth.el, t.dep), r2 = elemPos(ce, t.dep + t.tof), s = lambert(r1, r2, t.tof * 86400, MU_SUN);
+  t.el = rv2el(r1, s[0], MU_SUN, t.dep); t.arr = t.dep + t.tof;
+  return W;
+}
+function topPlanet(W, id) { var o = W.O[id]; if (!o) return null; var bid = o.kind === 'body' ? o.id : o.parent; var b = W.BI[bid]; if (!b) return null; while (b.par > 0) b = W.B[b.par]; return b.par === 0 ? b : null; }
+function transferSolve(from, to, dep, tof) {
+  var r1 = elemPos(from.el, dep), r2 = elemPos(to.el, dep + tof), s = lambert(r1, r2, tof * 86400, MU_SUN); if (!s) return null;
+  var vi1 = sub3(s[0], elemVel(from.el, dep)), vi2 = sub3(s[1], elemVel(to.el, dep + tof)), v1 = len3(vi1), v2 = len3(vi2);
+  var pr1 = from.id === 'earth' ? 384400 : (PARK[from.id] || from.R * 1.5), pr2 = PARK[to.id] || to.R * 1.5, ve1 = Math.sqrt(2 * from.gm / pr1), ve2 = Math.sqrt(2 * to.gm / pr2);
+  var dv1 = Math.sqrt(v1 * v1 + ve1 * ve1) - ve1 / Math.SQRT2, dv2 = Math.sqrt(v2 * v2 + ve2 * ve2) - ve2 / Math.SQRT2;
+  return { dep: dep, tof: tof, dv1: dv1, dv2: dv2, dv: dv1 + dv2 + 0.03, vinf1: v1, vinf2: v2, c3: v1 * v1, dla: Math.asin(vi1[2] / v1) / D2R, r1: r1, v1: s[0] };
+}
+function bestNow(from, to, dep) { var best = null; for (var tof = 30; tof <= 1400; tof += 10) { var s = transferSolve(from, to, dep, tof); if (s && (!best || s.dv < best.dv)) best = s; } return best; }
+
+// ---------- vignettes (TTD-style live windows) ----------
+function hullGrad(ctx, y, L, tone) { var g = ctx.createLinearGradient(0, y - L * 0.12, 0, y + L * 0.12); g.addColorStop(0, tone[0]); g.addColorStop(0.5, tone[1]); g.addColorStop(1, tone[2]); return g; }
+function rrect(ctx, x, y, w, h, r) { ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h); }
+function drawShip(ctx, x, y, L, kind, own, heat) {
+  var tone = own ? ['#c3cad0', '#5f686f', '#16191c'] : ['#a9adb1', '#55595d', '#141618'];
+  var hg = hullGrad(ctx, y, L, tone);
+  function rad(x0, x1, h) {
+    [-1, 1].forEach(function (s) {
+      ctx.beginPath(); ctx.moveTo(x + x0 * L, y + s * 0.02 * L); ctx.lineTo(x + x1 * L, y + s * 0.02 * L); ctx.lineTo(x + (x1 - 0.04) * L, y + s * h * L); ctx.lineTo(x + (x0 + 0.04) * L, y + s * h * L); ctx.closePath();
+      ctx.fillStyle = '#111518'; ctx.fill(); ctx.strokeStyle = 'rgba(' + (120 + heat * 100) + ',' + (60 + heat * 20) + ',40,' + (0.35 + heat * 0.4) + ')'; ctx.lineWidth = 1; ctx.stroke();
+      ctx.strokeStyle = 'rgba(90,100,110,0.35)'; for (var k = 1; k < 5; k++) { var xx = x + (x0 + (x1 - x0) * k / 5) * L; ctx.beginPath(); ctx.moveTo(xx, y + s * 0.02 * L); ctx.lineTo(xx, y + s * (h - 0.01) * L); ctx.stroke(); }
+    });
+  }
+  function bell(x0) { ctx.fillStyle = '#2a2f33'; ctx.beginPath(); ctx.moveTo(x + x0 * L, y - 0.025 * L); ctx.lineTo(x + (x0 + 0.13) * L, y - 0.065 * L); ctx.lineTo(x + (x0 + 0.13) * L, y + 0.065 * L); ctx.lineTo(x + x0 * L, y + 0.025 * L); ctx.closePath(); ctx.fill(); ctx.strokeStyle = 'rgba(160,170,180,0.35)'; ctx.stroke(); }
+  if (kind === 'cans') { for (var c = 0; c < 8; c++) { var cx = x + (c % 4) * L * 0.26, cy = y + (c < 4 ? -0.07 : 0.07) * L * 1.4; rrect(ctx, cx, cy - L * 0.05, L * 0.22, L * 0.1, L * 0.03); ctx.fillStyle = c < 5 ? hg : '#202428'; ctx.fill(); } return; }
+  if (kind === 'tug') { ctx.fillStyle = '#1b2026'; ctx.beginPath(); ctx.ellipse(x + 0.2 * L, y, 0.05 * L, 0.3 * L, 0, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = 'rgba(200,190,150,0.5)'; ctx.stroke(); rrect(ctx, x + 0.25 * L, y - 0.07 * L, 0.5 * L, 0.14 * L, 0.04 * L); ctx.fillStyle = hg; ctx.fill(); bell(0.75); return; }
+  if (kind === 'sep') { ctx.fillStyle = '#18212b'; [-1, 1].forEach(function (s) { ctx.fillRect(x + 0.3 * L, y + s * 0.05 * L - (s < 0 ? 0.32 * L : 0), 0.32 * L, 0.32 * L); ctx.strokeStyle = 'rgba(110,130,150,0.4)'; ctx.strokeRect(x + 0.3 * L, y + s * 0.05 * L - (s < 0 ? 0.32 * L : 0), 0.32 * L, 0.32 * L); }); rrect(ctx, x + 0.1 * L, y - 0.05 * L, 0.75 * L, 0.1 * L, 0.03 * L); ctx.fillStyle = hg; ctx.fill(); return; }
+  if (kind === 'tanker') rad(0.62, 0.84, 0.15); else rad(0.44, 0.78, kind === 'survey' ? 0.17 : 0.22);
+  ctx.fillStyle = hg;
+  if (kind === 'tanker') { [0.1, 0.3, 0.5].forEach(function (k) { rrect(ctx, x + k * L, y - 0.1 * L, 0.19 * L, 0.2 * L, 0.06 * L); ctx.fill(); }); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 0.1 * L, y - 0.05 * L); ctx.lineTo(x + 0.1 * L, y + 0.05 * L); ctx.fill(); }
+  else {
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 0.16 * L, y - 0.075 * L); ctx.lineTo(x + 0.16 * L, y + 0.075 * L); ctx.closePath(); ctx.fill();
+    ctx.fillRect(x + 0.16 * L, y - 0.068 * L, 0.14 * L, 0.136 * L);
+    rrect(ctx, x + 0.33 * L, y - 0.055 * L, 0.29 * L, 0.11 * L, 0.04 * L); ctx.fill();
+    if (kind === 'survey') { ctx.strokeStyle = tone[0]; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(x + 0.24 * L, y - 0.15 * L, 0.06 * L, Math.PI * 0.1, Math.PI * 0.9); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x + 0.24 * L, y - 0.07 * L); ctx.lineTo(x + 0.24 * L, y - 0.1 * L); ctx.stroke(); }
+  }
+  ctx.fillStyle = '#3a4046'; ctx.fillRect(x + 0.3 * L, y - 0.012 * L, 0.52 * L, 0.024 * L);
+  ctx.fillStyle = hg; ctx.fillRect(x + 0.8 * L, y - 0.04 * L, 0.06 * L, 0.08 * L);
+  bell(0.86);
+}
+function drawSphere(ctx, x, y, r, col, th, k) {
+  ctx.fillStyle = '#0d1013'; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  ctx.save(); ctx.translate(x, y); ctx.rotate(th); ctx.fillStyle = col; ctx.beginPath(); ctx.arc(0, 0, r, -Math.PI / 2, Math.PI / 2, false);
+  if (k >= 0) ctx.ellipse(0, 0, Math.max(0.01, r * k), r, 0, Math.PI / 2, Math.PI * 1.5, false); else ctx.ellipse(0, 0, Math.max(0.01, -r * k), r, 0, Math.PI / 2, -Math.PI / 2, true);
+  ctx.fill(); ctx.restore();
+}
+function vignetteText(ctx, t, x, y, col) { ctx.font = '10px "IBM Plex Mono", monospace'; ctx.fillStyle = col || 'rgba(200,208,215,0.75)'; ctx.fillText(t, x, y); }
+function sceneFleet(ctx, w, h, o, t) {
+  ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, w, h);
+  var bodyCol = o.parent === 'moon' ? '#a8a6a1' : o.parent === '1-ceres' ? '#8f8a83' : null;
+  if (bodyCol) drawSphere(ctx, w * 0.82, h * 2.25, h * 1.75, bodyCol, -2.2, -0.55);
+  else { ctx.fillStyle = '#fbf4e2'; ctx.beginPath(); ctx.arc(w * 0.9, h * 0.18, 2, 0, Math.PI * 2); ctx.fill(); vignetteText(ctx, 'SUN', w * 0.9 - 26, h * 0.18 + 3, 'rgba(246,239,220,0.5)'); }
+  var own = o.side === 'own', ships = o.ships || [], slots = [[0.08, 0.38, 1.0], [0.47, 0.66, 0.82], [0.56, 0.24, 0.66], [0.2, 0.8, 0.55]];
+  ships.forEach(function (s, i) { var sl = slots[i % 4], L = (s.kind === 'cans' ? 120 : 150) * sl[2] * (ships.length === 1 ? 1.5 : 1), dx = Math.sin(t * 0.21 + i * 1.7) * 2, dy = Math.sin(t * 0.17 + i) * 1.6; var x = w * (ships.length === 1 ? 0.22 : sl[0]) + dx, y = h * (ships.length === 1 ? 0.5 : sl[1]) + dy; drawShip(ctx, x, y, L, s.kind, own, s.kind === 'escort' ? 0.25 : 0.12); vignetteText(ctx, s.name.replace('IWS ', '').replace('UNSA ', ''), x, y + L * 0.2 + 12, 'rgba(180,190,198,0.7)'); });
+  ctx.strokeStyle = 'rgba(200,208,215,0.6)'; ctx.beginPath(); ctx.moveTo(10, h - 12); ctx.lineTo(70, h - 12); ctx.moveTo(10, h - 15); ctx.lineTo(10, h - 9); ctx.moveTo(70, h - 15); ctx.lineTo(70, h - 9); ctx.stroke();
+  vignetteText(ctx, '50 m', 76, h - 9); vignetteText(ctx, own ? 'formation compressed · real spread ' + (o.spread || '—') : 'registry imagery · not live', w - (own ? 250 : 170), h - 9, 'rgba(160,170,180,0.6)');
+}
+function sceneStation(ctx, w, h, o, t) {
+  ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, w, h);
+  var own = o.side === 'own', tone = own ? ['#c3cad0', '#5f686f', '#16191c'] : ['#9da1a5', '#4f5357', '#131517'];
+  if (o.scene === 'picket') {
+    var x = w * 0.3, y = h * 0.5; ctx.fillStyle = '#13171b'; ctx.beginPath(); ctx.moveTo(x - 40, y - 46); ctx.lineTo(x - 30, y + 46); ctx.lineTo(x - 24, y + 46); ctx.lineTo(x - 34, y - 46); ctx.fill();
+    var g = ctx.createLinearGradient(0, y - 22, 0, y + 22); g.addColorStop(0, tone[0]); g.addColorStop(0.5, tone[1]); g.addColorStop(1, tone[2]); ctx.fillStyle = g; rrect(ctx, x - 20, y - 20, 170, 40, 4); ctx.fill();
+    ctx.fillStyle = '#05070a'; ctx.beginPath(); ctx.ellipse(x + 150, y, 5, 19, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#111518'; ctx.fillRect(x + 20, y + 22, 90, 34); ctx.strokeStyle = 'rgba(120,60,40,0.4)'; ctx.strokeRect(x + 20, y + 22, 90, 34);
+    vignetteText(ctx, 'line of sight →', x + 165, y + 4, 'rgba(92,184,230,0.7)');
+  } else if (o.scene === 'orbital') {
+    var cx = w * 0.45, cy = h * 0.5, g2 = ctx.createLinearGradient(0, cy - 30, 0, cy + 30); g2.addColorStop(0, tone[0]); g2.addColorStop(0.5, tone[1]); g2.addColorStop(1, tone[2]);
+    ctx.fillStyle = '#18212b'; ctx.fillRect(cx - 170, cy - 8, 110, 16); ctx.fillRect(cx + 60, cy - 8, 110, 16);
+    ctx.fillStyle = g2; rrect(ctx, cx - 60, cy - 20, 120, 40, 10); ctx.fill(); rrect(ctx, cx - 18, cy - 44, 36, 88, 10); ctx.fill();
+    drawSphere(ctx, w * 0.12, h * 1.6, h * 1.0, '#a8a6a1', -1.2, -0.3);
+  } else {
+    var moon = o.scene === 'moon', gy = h * 0.68;
+    if (moon) drawSphere(ctx, w * 0.8, h * 0.2, 9, '#7193b4', 0.6, 0.2);
+    var gg = ctx.createLinearGradient(0, gy, 0, h); gg.addColorStop(0, moon ? '#5d5c59' : '#4b4a47'); gg.addColorStop(1, '#1a1a19'); ctx.fillStyle = gg;
+    ctx.beginPath(); ctx.moveTo(0, gy + 6); for (var k = 0; k <= 20; k++) ctx.lineTo(w * k / 20, gy + Math.sin(k * 1.7) * 2 + (k - 10) * (k - 10) * 0.04); ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath(); ctx.fill();
+    // structures with long low-sun shadows (sun from the left)
+    var items = [[0.16, 26, 'sph'], [0.25, 22, 'sph'], [0.33, 22, 'sph'], [0.5, 54, 'rad'], [0.62, 30, 'box'], [0.8, 6, 'pad']];
+    items.forEach(function (it) {
+      var x = w * it[0], s = it[1];
+      ctx.fillStyle = 'rgba(0,0,0,0.85)'; ctx.beginPath(); ctx.moveTo(x - s * 0.4, gy + 4); ctx.lineTo(x + s * 0.4, gy + 4); ctx.lineTo(x + s * 3.4, gy + 10); ctx.lineTo(x + s * 2.2, gy + 12); ctx.closePath(); if (it[2] !== 'pad') ctx.fill();
+      var g3 = ctx.createLinearGradient(x - s / 2, 0, x + s / 2, 0); g3.addColorStop(0, tone[0]); g3.addColorStop(0.6, tone[1]); g3.addColorStop(1, tone[2]); ctx.fillStyle = g3;
+      if (it[2] === 'sph') { ctx.beginPath(); ctx.arc(x, gy - s / 2 + 3, s / 2, 0, Math.PI * 2); ctx.fill(); }
+      if (it[2] === 'box') { ctx.fillRect(x - s / 2, gy - s * 0.7, s, s * 0.7 + 3); ctx.fillRect(x - 2, gy - s * 1.5, 3, s * 0.8); }
+      if (it[2] === 'rad') { ctx.fillStyle = '#121619'; ctx.fillRect(x - 3, gy - s, 6, s + 3); ctx.strokeStyle = 'rgba(150,70,40,0.45)'; ctx.strokeRect(x - 3, gy - s, 6, s + 3); ctx.fillStyle = '#121619'; ctx.fillRect(x + 8, gy - s * 0.85, 6, s * 0.85 + 3); ctx.strokeRect(x + 8, gy - s * 0.85, 6, s * 0.85 + 3); }
+      if (it[2] === 'pad') { ctx.strokeStyle = 'rgba(160,165,170,0.5)'; ctx.beginPath(); ctx.ellipse(x, gy + 8, 34, 5, 0, 0, Math.PI * 2); ctx.stroke(); var on = Math.floor(t * 1.2) % 2 === 0; [-30, 30].forEach(function (d) { ctx.fillStyle = on ? '#e0a040' : '#3a2a10'; ctx.fillRect(x + d - 1, gy + 7, 2, 2); }); }
+    });
+    if (own) vignetteText(ctx, moon ? 'Shackleton rim · sun 1.6° above horizon' : 'Occator rim · local noon', 10, 16, 'rgba(160,170,180,0.6)');
+  }
+  vignetteText(ctx, own ? 'live · station camera 2' : 'registry imagery · not live', w - (own ? 150 : 170), h - 9, 'rgba(160,170,180,0.6)');
+}
+function sceneContact(ctx, w, h, o, t) {
+  ctx.fillStyle = '#020304'; ctx.fillRect(0, 0, w, h); var cx = w / 2, cy = h / 2, col = o.side === 'unk' ? '224,160,64' : '201,206,212';
+  ctx.strokeStyle = 'rgba(120,140,160,0.18)'; ctx.lineWidth = 1; for (var k = -3; k <= 3; k++) { ctx.beginPath(); ctx.moveTo(cx + k * 40, 8); ctx.lineTo(cx + k * 40, h - 8); ctx.stroke(); ctx.beginPath(); ctx.moveTo(8, cy + k * 30); ctx.lineTo(w - 8, cy + k * 30); ctx.stroke(); }
+  var jx = Math.sin(t * 3.1) * 0.6, jy = Math.cos(t * 2.3) * 0.6, r = o.track === 'group' ? 22 : 12;
+  var g = ctx.createRadialGradient(cx + jx, cy + jy, 0, cx + jx, cy + jy, r); g.addColorStop(0, 'rgba(' + col + ',0.95)'); g.addColorStop(0.35, 'rgba(' + col + ',0.35)'); g.addColorStop(1, 'rgba(' + col + ',0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx + jx, cy + jy, r, 0, Math.PI * 2); ctx.fill();
+  if (o.track === 'group') { [[-9, 5], [7, -4], [3, 8]].forEach(function (p) { var g2 = ctx.createRadialGradient(cx + p[0], cy + p[1], 0, cx + p[0], cy + p[1], 9); g2.addColorStop(0, 'rgba(' + col + ',0.5)'); g2.addColorStop(1, 'rgba(' + col + ',0)'); ctx.fillStyle = g2; ctx.beginPath(); ctx.arc(cx + p[0], cy + p[1], 9, 0, Math.PI * 2); ctx.fill(); }); }
+  ctx.strokeStyle = 'rgba(' + col + ',0.6)'; ctx.beginPath(); ctx.moveTo(cx - 30, cy); ctx.lineTo(cx - 16, cy); ctx.moveTo(cx + 16, cy); ctx.lineTo(cx + 30, cy); ctx.moveTo(cx, cy - 30); ctx.lineTo(cx, cy - 16); ctx.moveTo(cx, cy + 16); ctx.lineTo(cx, cy + 30); ctx.stroke();
+  vignetteText(ctx, o.track === 'group' ? 'radar return · traded feed · 3–4 returns' : 'IR 8 µm · unresolved · one pixel is ~10 000 km', 10, 16, 'rgba(160,170,180,0.7)');
+  vignetteText(ctx, 'grid 1 µrad', 10, h - 9, 'rgba(160,170,180,0.6)'); vignetteText(ctx, 'age ' + fmtDur(o.age), w - 96, h - 9, 'rgba(' + col + ',0.8)');
+}
+function sceneBody(ctx, w, h, o, sunDir) {
+  ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, w, h);
+  if (o.id === 'sun') { ctx.fillStyle = '#fbf4e2'; ctx.beginPath(); ctx.arc(w / 2, h / 2, h * 0.36, 0, Math.PI * 2); ctx.fill(); return; }
+  drawSphere(ctx, w / 2, h / 2, h * 0.38, BODY_COL[o.id] || (o.cat === 3 ? '#9a9892' : '#8d8881'), sunDir, 0.35);
+  if (o.id === 'saturn') { ctx.strokeStyle = 'rgba(207,189,147,0.5)'; ctx.lineWidth = 6; ctx.beginPath(); ctx.ellipse(w / 2, h / 2, h * 0.8, h * 0.14, -0.15, 0, Math.PI * 2); ctx.stroke(); }
+  vignetteText(ctx, 'phase from current geometry', 10, h - 9, 'rgba(160,170,180,0.55)');
+}
+
+class Component extends DCLogic {
+  componentDidMount() {
+    var self = this, p = this.props || {};
+    var iy = Number(p.initYaw), ip = Number(p.initPitch), il = Number(p.initLogD);
+    this.S = { yaw: isFinite(iy) && p.initYaw != null ? iy : -1.9, pitch: isFinite(ip) && p.initPitch != null ? ip : 0.62, logD: il || 8.95, logDT: il || 8.95, focus: p.initFocus || 'sun', fromId: null, tTrans: 1, jd: NOW0, rate: 0, hover: null, sel: p.initSelect || null, armed: null, armedFor: null, mouse: null };
+    this.wins = []; this.zTop = 10; this.wcv = {}; this.pcv = {}; this.wsv = {};
+    this.setState({ ready: false, sel: this.S.sel, focus: this.S.focus, rate: 0, jd: NOW0, logD: this.S.logD, armed: null, menu: null, tick: 0,
+      log: [
+        { t: '01-20 06:41:58', age: '6m 12s', src: 'Ceres Hub · IR', tone: 'unk', msg: 'U-0412 drive plume, 10 GW class. Cross-fix with P-3: 0.80 AU from Ceres Hub ± 0.004 AU. Freighter 55 %, warship 30 %.' },
+        { t: '01-20 06:39:20', age: '1.3 s', src: 'TF Kestrel', tone: 'own', msg: 'UNSA Resolute trimmed course 0.4°. Closest approach 1 290 km at T+13h 35m. Doctrine: shadow, weapons tight.' },
+        { t: '01-20 06:12:07', age: '8m 40s', src: 'Picket P-3 · IR', tone: 'unk', msg: 'U-0419 new bearing-only track. One sensor, no range: 3σ arc 1.5–4.5 AU along the line of sight.' },
+        { t: '01-20 05:58:44', age: '0.0 s', src: 'Shackleton Depot', tone: '', msg: 'H₂ stock 4 810 t (+118 t/d). Top-up slot for TF Kestrel reserved 2043-02-02.' },
+        { t: '01-20 05:30:00', age: '—', src: 'Board', tone: '', msg: 'Shareholders ask for first Ceres water at the cislunar depot by Q3. Sponsor reminds: armament licence class B.' },
+        { t: '01-20 04:47:13', age: '14m 03s', src: 'Survey Grp Ahti', tone: 'own', msg: 'Mid-course trim complete, 11.8 m/s. Ceres capture burn T−84d.' },
+        { t: '01-20 03:02:51', age: '2h 24m', src: 'Deimos Yard (traded feed)', tone: 'other', msg: 'UNSA Patrol 4 last fix ageing. Track coasting on rails; along-track σ growing ~0.8° per day.' }
+      ] });
+    this.loopB = this.loop.bind(this);
+    fetch(BODIES_URL).then(function (r) { return r.json(); }).then(function (rows) { self.W = buildWorld(rows); self.applyPreset(p.initWindows || 'none'); self.setState({ ready: true }); });
+    this.lastTs = 0; this.lastUi = 0; this.raf = requestAnimationFrame(this.loopB);
+  }
+  componentWillUnmount() { cancelAnimationFrame(this.raf); if (this.cv && this.wheelH) this.cv.removeEventListener('wheel', this.wheelH); this.endDrag(); }
+  applyPreset(name) {
+    if (name === 'units') {
+      this.openWin('fleet', 'tf-kestrel', { x: 22, y: 64, sticky: true });
+      this.openWin('station', 'shackleton', { x: 22, y: 560, sticky: true });
+      this.openWin('fleet', 'unsa-resolute', { x: 1450, y: 64, sticky: true });
+      this.openWin('contact', 'u-0412', { x: 1500, y: 470, sticky: true });
+    } else if (name === 'transfer') {
+      this.openWin('fleet', 'tf-kestrel', { x: 22, y: 64, sticky: true });
+      var w = this.openWin('transfer', 'tf-kestrel', { x: 1210, y: 64, sticky: true, target: '1-ceres' });
+      w.T.opts.topUp = true; this.W.O['tf-kestrel'].opts.topUp = true; this.computeTransfer(w, null);
+    }
+  }
+
+  ensure() {
+    if (this.h) return this.h; var self = this, h = {};
+    h.setRoot = function (el) { self.root = el; };
+    h.setCanvas = function (el) {
+      if (!el || el === self.cv) return; self.cv = el; var dpr = window.devicePixelRatio || 1; el.width = VW * dpr; el.height = VH * dpr;
+      self.wheelH = function (e) { e.preventDefault(); var S = self.S; if (!S) return; var k = e.ctrlKey ? 0.04 : 0.14, steps = Math.max(-3, Math.min(3, e.deltaY / 100)); S.logDT = self.clampZoom(S.logDT + steps * k); };
+      el.addEventListener('wheel', self.wheelH, { passive: false });
+    };
+    h.onDown = function (e) {
+      if (e.button === 1) e.preventDefault();
+      if (self.root) self.root.focus(); self.drag = { x: e.clientX, y: e.clientY, b: e.button, moved: false };
+      self.docMove = function (ev) { var d = self.drag; if (!d) return; var dx = ev.clientX - d.x, dy = ev.clientY - d.y; if (!d.moved && Math.abs(dx) + Math.abs(dy) > 4) d.moved = true; if (d.moved) { self.S.yaw -= dx * 0.005; self.S.pitch = Math.max(-1.45, Math.min(1.45, self.S.pitch + dy * 0.005)); d.x = ev.clientX; d.y = ev.clientY; } };
+      self.docUp = function (ev) { var d = self.drag; self.drag = null; self.endDrag(); if (!d || d.moved) return; var m = self.mpos(ev), id = self.pick(m); if (d.b === 0) self.leftClick(id, m); else if (d.b === 1) { if (id) self.focusOn(id); } else if (d.b === 2) self.rightClick(id, m); };
+      document.addEventListener('mousemove', self.docMove); document.addEventListener('mouseup', self.docUp);
+    };
+    h.onMove = function (e) { if (!self.S) return; var m = self.mpos(e); self.S.mouse = m; if (!self.drag) self.S.hover = self.pick(m); };
+    h.onLeave = function () { if (self.S) { self.S.hover = null; self.S.mouse = null; } };
+    h.onDbl = function (e) { var id = self.pick(self.mpos(e)); if (id) self.focusOn(id); };
+    h.onCtx = function (e) { e.preventDefault(); };
+    h.onKey = function (e) {
+      var k = e.key, S = self.S; if (!S || (e.target && e.target.tagName === 'INPUT')) return;
+      if (k === 'Escape') { if (S.armed) self.disarm(); else if (self.state.menu) self.setState({ menu: null }); else self.closeTop(); }
+      else if (k === 'Delete') { self.wins = self.wins.filter(function (w) { return w.sticky; }); self.bump(); }
+      else if (k === 'f' || k === 'F') { if (S.sel) self.focusOn(S.sel); }
+      else if (k === 'Home') self.focusOn('sun');
+      else if (k === '+' || k === '=') S.logDT = self.clampZoom(S.logDT - 0.3);
+      else if (k === '-') S.logDT = self.clampZoom(S.logDT + 0.3);
+      else if (k === ' ') { e.preventDefault(); self.setRate(S.rate ? 0 : 86400); }
+      else if (k === 'l' || k === 'L') self.openWin('log', 'log', {});
+      else if (k === 'F2') { e.preventDefault(); self.openWin('outliner', 'outliner', {}); }
+      else if (k === 'F3') { e.preventDefault(); h.openTransfer(); }
+      else { var c = { t: 'transfer', r: 'rendezvous', i: 'intercept', w: 'shadow', h: 'hold' }[k.toLowerCase()]; if (c) self.command(c); }
+    };
+    h.onRuler = function (e) { var r = e.currentTarget.getBoundingClientRect(); self.S.logDT = self.clampZoom(10.5 - (e.clientY - r.top) / r.height * 10); };
+    h.openOutliner = function () { var w = self.openWin('outliner', 'outliner', {}); w.tab = 'assets'; self.bump(); };
+    h.openPicture = function () { var w = self.openWin('outliner', 'outliner', {}); w.tab = 'picture'; self.bump(); };
+    h.openLog = function () { self.openWin('log', 'log', {}); };
+    h.openTransfer = function () { var s = self.S && self.S.sel; if (s && self.isOwnFleet(s)) self.openWin('transfer', s, { target: null }); else self.addLog('Planner', '', 'Select one of your groups first, then open the transfer planner (F3).'); };
+    h.rates = [0, 1, 10, 240, 3600, 86400, 1000000].map(function (r) { return { r: r, pick: function () { self.setRate(r); } }; });
+    h.cmds = [['transfer', 'Transfer', 'T'], ['rendezvous', 'Rendezvous', 'R'], ['intercept', 'Intercept', 'I'], ['shadow', 'Shadow', 'W'], ['hold', 'Hold', 'H']].map(function (c) { return { verb: c[0], label: c[1], key: c[2], run: function () { self.command(c[0]); } }; });
+    h.cache = {};
+    this.h = h; return h;
+  }
+  fn(key, make) { var c = this.ensure().cache; if (!c[key]) c[key] = make(); return c[key]; }
+  bump() { this.setState({ tick: (this.state.tick || 0) + 1 }); }
+  endDrag() { if (this.docMove) document.removeEventListener('mousemove', this.docMove); if (this.docUp) document.removeEventListener('mouseup', this.docUp); if (this.winMove) document.removeEventListener('mousemove', this.winMove); if (this.winUp) document.removeEventListener('mouseup', this.winUp); this.docMove = this.docUp = this.winMove = this.winUp = null; }
+  scale() { if (!this.root) return 1; var r = this.root.getBoundingClientRect(); return r.width / VW || 1; }
+  mpos(e) { var cv = this.cv; if (!cv) return null; var r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * VW / r.width, y: (e.clientY - r.top) * VH / r.height }; }
+  clampZoom(v) { var lo = 0.7, S = this.S, W = this.W; if (W && S) { var o = W.O[S.focus]; if (o && o.kind === 'body') lo = Math.log10(Math.max(o.R * 1.6, 5)); } return Math.max(lo, Math.min(10.4, v)); }
+  setRate(r) { this.S.rate = r; this.setState({ rate: r, jd: this.S.jd }); }
+  addLog(src, tone, msg) { var l = this.state.log.slice(); l.unshift({ t: jdToStr(this.S.jd).slice(5), age: '0.0 s', src: src, tone: tone, msg: msg }); this.setState({ log: l }); }
+  isOwnFleet(id) { var o = this.W && this.W.O[id]; return !!(o && o.kind === 'fleet' && o.side === 'own'); }
+  winTypeFor(o) { return o.kind === 'body' ? 'body' : o.kind === 'contact' ? 'contact' : o.kind === 'station' ? 'station' : 'fleet'; }
+
+  // ---------- windows ----------
+  openWin(type, obj, opt) {
+    opt = opt || {}; var ex = this.wins.filter(function (w) { return w.type === type && w.obj === obj; })[0];
+    if (ex) { ex.z = ++this.zTop; if (opt.target && type === 'transfer') this.retargetWin(ex, opt.target); this.bump(); return ex; }
+    var w = { id: 'w' + (++this.zTop) + type, type: type, obj: obj, x: opt.x, y: opt.y, z: ++this.zTop, sticky: !!opt.sticky, preview: !!opt.preview, shaded: false, tab: type === 'fleet' ? 'ships' : 'assets', filter: '' };
+    if (opt.preview) {
+      var pv = this.wins.filter(function (x) { return x.preview && !x.sticky; })[0];
+      if (pv) { w.x = pv.x; w.y = pv.y; this.wins = this.wins.filter(function (x) { return x !== pv; }); }
+    }
+    if (w.x == null) { var n = this.wins.length; w.x = type === 'log' ? 470 : type === 'outliner' ? 22 : Math.min(VW - WIN_W[type] - 70, 1440 - (type === 'transfer' ? 230 : 0) + n * 6); w.y = type === 'log' ? 700 : 64 + (type === 'outliner' ? 0 : n * 22); }
+    if (type === 'transfer') { var f = this.W.O[obj]; w.T = { fid: obj, opts: f.opts || {}, sel: null, hover: null }; this.retargetWin(w, opt.target); }
+    this.wins.push(w); this.bump(); return w;
+  }
+  retargetWin(w, target) {
+    var W = this.W, f = W.O[w.T.fid], from = topPlanet(W, w.T.fid), to = target ? topPlanet(W, target) : null;
+    w.T.target = target; w.T.from = from; w.T.to = to; w.T.msg = null; w.T.dv = null; w.T.committed = false;
+    if (!from) w.T.msg = f.name + ' is in heliocentric transit. Plan from its arrival, or detach first.';
+    else if (!target) w.T.msg = 'Pick a destination: press "Pick on map", or right-click a body with the group selected.';
+    else if (from === to) w.T.msg = 'Local transfer inside the ' + from.name + ' system. The cislunar planner is not in this mockup.';
+    else { var self = this; setTimeout(function () { self.computeTransfer(w, null); self.computeStrip(w); self.bump(); }, 20); }
+  }
+  computeTransfer(w, depStart) {
+    var T = w.T; if (!T.from || !T.to || T.from === T.to) return;
+    var a1 = T.from.el.a, a2 = T.to.el.a, tH = Math.PI * Math.sqrt(Math.pow((a1 + a2) / 2, 3) / MU_SUN) / 86400;
+    T.tof0 = Math.round(tH * 0.45 / 10) * 10; T.tof1 = Math.round(tH * 1.6 / 10) * 10; T.span = 540; T.NX = 100; T.NY = 64; T.depStart = depStart || this.S.jd;
+    T.dv = new Float32Array(T.NX * T.NY);
+    for (var j = 0; j < T.NY; j++) for (var i = 0; i < T.NX; i++) { var s = transferSolve(T.from, T.to, this.kDep(T, i), this.kTof(T, j)); T.dv[j * T.NX + i] = s ? s.dv : 99; }
+    var best = 0; for (var k = 1; k < T.dv.length; k++) if (T.dv[k] < T.dv[best]) best = k;
+    T.sel = { i: best % T.NX, j: Math.floor(best / T.NX) }; T.dirty = true; T.committed = false; this.updatePlanGhost(w);
+  }
+  computeStrip(w) {
+    var T = w.T; if (!T.from || !T.to) return; var span = 365.25 * 6, pts = [];
+    for (var i = 0; i < 150; i++) { var dep = this.S.jd + span * i / 149, m = 99; for (var tof = T.tof0 * 0.8; tof <= T.tof1 * 1.15; tof += (T.tof1 - T.tof0) / 22) { var s = transferSolve(T.from, T.to, dep, tof); if (s && s.dv < m) m = s.dv; } pts.push({ dep: dep, dv: m }); }
+    T.strip = { pts: pts, span: span, t0: this.S.jd };
+  }
+  kDep(T, i) { return T.depStart + T.span * i / (T.NX - 1); }
+  kTof(T, j) { return T.tof0 + (T.tof1 - T.tof0) * j / (T.NY - 1); }
+  cellSol(T, c) { return c && T.from && T.to ? transferSolve(T.from, T.to, this.kDep(T, c.i), this.kTof(T, c.j)) : null; }
+  fleetCap(f, opts) {
+    var m = 1e9, who = '';
+    (f.ships || []).forEach(function (s) {
+      var dv;
+      if (s.dry) { var prop = s.prop; if (opts.topUp) prop = s.cap; if (opts.xfer && !opts.topUp) { if (s.name.indexOf('Louhi') >= 0) prop = Math.min(s.cap, prop + 320); if (s.name.indexOf('Sampo') >= 0) prop -= 320; } if (opts.drop && s.name.indexOf('Louhi') >= 0) return; dv = shipDv(s, prop); }
+      else dv = s.dv; if (dv > 0 && dv < m) { m = dv; who = s.name.replace('IWS ', ''); }
+    });
+    return { dv: m, who: who };
+  }
+  updatePlanGhost(w) { var T = w.T, s = this.cellSol(T, T.sel); if (!s) { T.ghost = null; return; } T.ghost = { el: rv2el(s.r1, s.v1, MU_SUN, s.dep), dep: s.dep, arr: s.dep + s.tof, to: T.to.id, from: T.from.id }; }
+  closeTop() { if (!this.wins.length) return; var top = this.wins.reduce(function (a, b) { return a.z > b.z ? a : b; }); this.wins = this.wins.filter(function (w) { return w !== top; }); this.bump(); }
+
+  select(id) {
+    this.S.sel = id || null;
+    if (id) this.openWin(this.winTypeFor(this.W.O[id]), id, { preview: true });
+    else { this.wins = this.wins.filter(function (w) { return !(w.preview && !w.sticky); }); }
+    this.setState({ sel: this.S.sel, menu: null });
+  }
+  focusOn(id) {
+    var S = this.S, W = this.W; if (!W || !W.O[id]) return; S.fromId = S.focus; S.focus = id; S.tTrans = 0;
+    var o = W.O[id], d; if (o.kind === 'body') d = o.id === 'sun' ? 9e8 : Math.max(o.R * 12, Math.min((o.soi || o.R * 50) * 0.35, o.R * 400)); else if (o.kind === 'contact') d = 4e7; else d = o.parent === 'sun' ? 3e6 : 6e4;
+    S.logDT = this.clampZoom(Math.log10(d)); this.setState({ focus: id });
+  }
+  validTarget(verb, id) {
+    var o = this.W && this.W.O[id]; if (!o || id === this.S.sel) return false;
+    if (verb === 'transfer') return o.kind === 'body' || (o.kind === 'station' && o.side === 'own');
+    if (verb === 'rendezvous') return o.side === 'own';
+    return o.side === 'other' || o.side === 'unk';
+  }
+  command(verb) {
+    var S = this.S; if (!this.isOwnFleet(S.sel)) return; var o = this.W.O[S.sel];
+    if (verb === 'hold') { o.orders = [{ text: 'Hold: station-keep current orbit', when: 'now' }]; o.plan = null; this.addLog(o.name, 'own', 'Order: hold. Station-keeping, queue cleared.'); return; }
+    S.armed = verb; S.armedFor = null; this.setState({ armed: verb, menu: null });
+  }
+  disarm() { this.S.armed = null; this.S.armedFor = null; this.setState({ armed: null }); }
+  execute(verb, fid, tid) {
+    var W = this.W, f = W.O[fid], t = W.O[tid];
+    if (verb === 'transfer') { this.openWin('transfer', fid, { target: tid }); return; }
+    if (verb === 'quick') { var a = topPlanet(W, fid), b = topPlanet(W, tid); var s = a && b && a !== b ? bestNow(a, b, this.S.jd + 1) : null; if (s) { f.plan = { el: rv2el(s.r1, s.v1, MU_SUN, s.dep), dep: s.dep, arr: s.dep + s.tof }; f.orders = [{ text: 'Transfer to ' + t.name + ' (best now)', when: jdDate(s.dep + s.tof).slice(5) }].concat(f.orders.slice(0, 2)); this.addLog(f.name, 'own', 'Order: transfer to ' + t.name + ' now, ' + s.dv.toFixed(2) + ' km/s, ' + s.tof + ' d.'); } return; }
+    var label = { rendezvous: 'Rendezvous with', intercept: 'Intercept', shadow: 'Shadow' }[verb];
+    f.orders = [{ text: label + ' ' + t.name, when: 'now' }].concat((f.orders || []).slice(0, 2)); this.addLog(f.name, 'own', 'Order: ' + label.toLowerCase() + ' ' + t.name + '.'); this.bump();
+  }
+  leftClick(id, m) {
+    var S = this.S; if (!S) return; if (this.state.menu) { this.setState({ menu: null }); return; }
+    if (S.armed) {
+      if (id && this.validTarget(S.armed, id)) { var v = S.armed, wf = S.armedFor; this.disarm(); if (wf) { var w = this.wins.filter(function (x) { return x.id === wf; })[0]; if (w) { this.retargetWin(w, id); w.z = ++this.zTop; this.bump(); } } else this.execute(v, S.sel, id); }
+      return;
+    }
+    this.select(id);
+  }
+  rightClick(id, m) {
+    var S = this.S, W = this.W, self = this; if (!S || !W) return;
+    if (S.armed) { this.disarm(); return; } if (this.state.menu) { this.setState({ menu: null }); return; } if (!id) return;
+    var t = W.O[id], items = [], title = t.name;
+    if (this.isOwnFleet(S.sel) && id !== S.sel) {
+      var f = W.O[S.sel]; title = f.name + ' → ' + t.name;
+      var verbs = t.kind === 'body' || (t.kind === 'station' && t.side === 'own') ? [['transfer', 'Plan transfer to ' + t.name + '…'], ['quick', 'Transfer now, best Δv']] : t.side === 'own' ? [['rendezvous', 'Rendezvous with ' + t.name]] : [['shadow', 'Shadow ' + t.name], ['intercept', 'Intercept ' + t.name]];
+      verbs.forEach(function (v, i) { items.push({ label: v[1], hint: i === 0 ? 'default' : '', cls: i === 0 ? 'mi def' : 'mi', run: function () { self.setState({ menu: null }); self.execute(v[0], S.sel, id); } }); });
+    } else {
+      items.push({ label: 'Centre view on ' + t.name, hint: 'F', cls: 'mi def', run: function () { self.setState({ menu: null }); self.focusOn(id); } });
+      items.push({ label: 'Open window (sticky)', hint: '', cls: 'mi', run: function () { self.setState({ menu: null }); self.openWin(self.winTypeFor(t), id, { sticky: true }); } });
+    }
+    this.setState({ menu: { x: Math.min(m.x + 6, VW - 280), y: Math.min(m.y + 6, VH - 60 - items.length * 24), title: title, items: items } });
+  }
+
+  posOf(id, jd, cache) {
+    var W = this.W, o = W.O[id]; if (!o) return [0, 0, 0]; if (cache[id]) return cache[id]; var p = [0, 0, 0];
+    if (o.kind === 'body') { if (o.par >= 0) { elemPos(o.el, jd, p); var pp = this.posOf(W.B[o.par].id, jd, cache); p[0] += pp[0]; p[1] += pp[1]; p[2] += pp[2]; } }
+    else if (o.orbit && o.track !== 'fix' && o.track !== 'group') { elemPos(o.orbit, jd, p); var q = this.posOf(o.parent, jd, cache); p[0] += q[0]; p[1] += q[1]; p[2] += q[2]; }
+    else if (o.surface) { var b = W.BI[o.parent], q2 = this.posOf(o.parent, jd, cache), s = o.surface, n = len3(s); p = [q2[0] + s[0] / n * b.R * 1.02, q2[1] + s[1] / n * b.R * 1.02, q2[2] + s[2] / n * b.R * 1.02]; }
+    else if (o.lagr) { var e = this.posOf(o.lagr.body, jd, cache), a = o.lagr.ang * D2R; p = [e[0] * Math.cos(a) - e[1] * Math.sin(a), e[0] * Math.sin(a) + e[1] * Math.cos(a), e[2]]; }
+    else if (o.transit) { var t = o.transit; if (jd <= t.dep) p = this.posOf(t.from, jd, cache).slice(); else if (jd >= t.arr) { p = this.posOf(t.to, jd, cache).slice(); p[0] += 1500; } else elemPos(t.el, jd, p); }
+    else if (o.linear) { var m = this.posOf(o.parent, jd, cache), dt = (jd - NOW0) * 86400; p = [m[0] + o.linear.r0[0] + o.linear.v[0] * dt, m[1] + o.linear.r0[1] + o.linear.v[1] * dt, m[2] + o.linear.r0[2] + o.linear.v[2] * dt]; }
+    else if (o.track === 'group' || o.track === 'fix') elemPos(o.orbit, jd, p);
+    else if (o.track === 'bearing') { var sp = this.posOf(o.sensors[0], jd, cache), dv = sub3(o.dirTo, sp), L = len3(dv); p = [sp[0] + dv[0] / L * 2.6 * AU, sp[1] + dv[1] / L * 2.6 * AU, sp[2] + dv[2] / L * 2.6 * AU]; }
+    cache[id] = p; return p;
+  }
+  pick(m) { if (!m || !this.picks) return null; var best = null, bd = 1e9; for (var i = 0; i < this.picks.length; i++) { var k = this.picks[i], d = Math.hypot(k.x - m.x, k.y - m.y) - k.r - k.pri * 0.5; if (d < 6 && d < bd) { bd = d; best = k.id; } } return best; }
+
+  loop(ts) {
+    var S = this.S;
+    if (S) {
+      var dt = this.lastTs ? Math.min(0.1, (ts - this.lastTs) / 1000) : 0; this.lastTs = ts;
+      if (S.rate > 0) S.jd += dt * S.rate / 86400;
+      S.logD += (S.logDT - S.logD) * Math.min(1, dt * 9); if (S.tTrans < 1) S.tTrans = Math.min(1, S.tTrans + dt / 0.7);
+      if (this.W) { this.draw(); this.drawWindows(ts / 1000); }
+      if (ts - this.lastUi > 200 && (Math.abs(S.logD - (this.state.logD || 0)) > 0.01 || S.rate > 0)) { this.lastUi = ts; this.setState({ logD: S.logD, jd: S.jd }); }
+    }
+    this.raf = requestAnimationFrame(this.loopB);
+  }
+
+  drawWindows(t) {
+    var self = this, W = this.W, S = this.S;
+    this.wins.forEach(function (w) {
+      if (w.shaded) return;
+      var cv = self.wcv[w.id];
+      if (cv && cv.isConnected) {
+        var ctx = cv.getContext('2d'), dpr = cv.width / cv._w; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); var o = W.O[w.obj];
+        if (w.type === 'fleet') sceneFleet(ctx, cv._w, cv._h, o, t);
+        else if (w.type === 'station') sceneStation(ctx, cv._w, cv._h, o, t);
+        else if (w.type === 'contact') sceneContact(ctx, cv._w, cv._h, o, t);
+        else if (w.type === 'body') { var c = {}, P = self.posOf(o.id, S.jd, c); sceneBody(ctx, cv._w, cv._h, o, Math.atan2(P[1], -P[0]) * 0.5 + Math.PI); }
+      }
+      if (w.type === 'transfer' && w.T && w.T.dv) { self.drawPorkchop(w); self.drawStrip(w); }
+    });
+  }
+  drawPorkchop(w) {
+    var cv = this.pcv[w.id]; if (!cv || !cv.isConnected) return; var T = w.T, PW = 640, PH = 290, ML = 44, MR = 10, MT = 20, MB = 26, pw = PW - ML - MR, ph = PH - MT - MB;
+    var f = this.W.O[T.fid], cap = this.fleetCap(f, T.opts).dv - 0.3, self = this;
+    if (T.dirty || T.heatCap !== cap || !T.off) {
+      var off = T.off || (T.off = document.createElement('canvas')), dpr = cv.width / PW; off.width = cv.width; off.height = cv.height; var c = off.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0);
+      c.fillStyle = '#07090b'; c.fillRect(0, 0, PW, PH); var cw = pw / (T.NX - 1), chh = ph / (T.NY - 1), mn = 1e9; for (var k = 0; k < T.dv.length; k++) mn = Math.min(mn, T.dv[k]);
+      for (var j = 0; j < T.NY; j++) for (var i = 0; i < T.NX; i++) { var v = T.dv[j * T.NX + i], x = ML + i * cw - cw / 2, y = MT + ph - j * chh - chh / 2; if (v <= cap) { var tt = Math.max(0, Math.min(1, (v - mn) / Math.max(0.2, cap - mn))); c.fillStyle = 'rgba(92,184,230,' + (0.42 - 0.27 * tt).toFixed(3) + ')'; } else { var g = Math.round(30 - 20 * Math.max(0, Math.min(1, (v - cap) / 14))); c.fillStyle = 'rgb(' + g + ',' + (g + 4) + ',' + (g + 8) + ')'; } c.fillRect(x, y, cw + 0.6, chh + 0.6); }
+      var X = function (dep) { return ML + (dep - T.depStart) / T.span * pw; }, Y = function (tof) { return MT + ph * (1 - (tof - T.tof0) / (T.tof1 - T.tof0)); };
+      c.save(); c.beginPath(); c.rect(ML, MT, pw, ph); c.clip(); c.strokeStyle = 'rgba(200,210,220,0.10)'; c.setLineDash([1, 4]);
+      for (var arr = Math.ceil((T.depStart + T.tof0) / 60) * 60; arr < T.depStart + T.span + T.tof1; arr += 60) { c.beginPath(); c.moveTo(X(arr - T.tof0), Y(T.tof0)); c.lineTo(X(arr - T.tof1), Y(T.tof1)); c.stroke(); }
+      c.setLineDash([]); c.restore();
+      var mnR = Math.floor(mn * 2) / 2, levels = []; for (var L = mnR + 0.5; L < mnR + 20; L += (L < mnR + 3 ? 0.5 : L < mnR + 8 ? 2 : 5)) levels.push(L);
+      levels.forEach(function (L, li) { self.contour(c, T, L, 'rgba(190,200,210,' + (li < 5 ? 0.45 : 0.28) + ')', 1, true, 0.1 + (li % 5) * 0.18, ML, MT, pw, ph); });
+      if (cap < 50) this.contour(c, T, cap, '#5cb8e6', 2, false, 0, ML, MT, pw, ph);
+      c.strokeStyle = '#2a323b'; c.strokeRect(ML + 0.5, MT + 0.5, pw, ph); c.font = '9.5px "IBM Plex Mono", monospace'; c.fillStyle = '#9aa4ae';
+      var step = (T.tof1 - T.tof0) > 600 ? 200 : 100; for (var tof = Math.ceil(T.tof0 / step) * step; tof <= T.tof1; tof += step) { c.fillText(String(tof), ML - 30, Y(tof) + 3); c.fillStyle = 'rgba(160,170,180,0.07)'; c.fillRect(ML, Y(tof), pw, 1); c.fillStyle = '#9aa4ae'; }
+      var MN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], d0 = new Date((T.depStart - 2440587.5) * 86400000), mo = new Date(Date.UTC(d0.getUTCFullYear(), d0.getUTCMonth() + 1, 1));
+      while (true) { var jd = mo.getTime() / 86400000 + 2440587.5; if (jd > T.depStart + T.span) break; if (mo.getUTCMonth() % 2 === 0) { c.fillStyle = mo.getUTCMonth() === 0 ? '#e3e7ea' : '#9aa4ae'; c.fillText(mo.getUTCMonth() === 0 ? String(mo.getUTCFullYear()) : MN[mo.getUTCMonth()], X(jd) - 10, PH - 9); } mo = new Date(Date.UTC(mo.getUTCFullYear(), mo.getUTCMonth() + 1, 1)); }
+      c.fillStyle = '#8b96a1'; c.font = '500 9.5px "IBM Plex Sans Condensed", sans-serif'; c.fillText('DEPARTURE ↦   ·   ↥ TIME OF FLIGHT, d   ·   TOTAL Δv km/s', ML, 12);
+      c.fillStyle = '#5cb8e6'; c.fillText('— PLANNABLE ' + cap.toFixed(2), ML + pw - 108, 12);
+      T.dirty = false; T.heatCap = cap;
+    }
+    var ctx = cv.getContext('2d'), dpr2 = cv.width / PW; ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(T.off, 0, 0); ctx.setTransform(dpr2, 0, 0, dpr2, 0, 0);
+    var X2 = function (dep) { return ML + (dep - T.depStart) / T.span * pw; }, Y2 = function (tof) { return MT + ph * (1 - (tof - T.tof0) / (T.tof1 - T.tof0)); };
+    if (T.sel) { var sx = X2(this.kDep(T, T.sel.i)), sy = Y2(this.kTof(T, T.sel.j)); ctx.strokeStyle = T.committed ? '#5cb8e6' : '#ffffff'; ctx.lineWidth = 1.5; ctx.strokeRect(sx - 5, sy - 5, 10, 10); ctx.globalAlpha = 0.3; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(sx, MT); ctx.lineTo(sx, sy - 5); ctx.moveTo(sx, sy + 5); ctx.lineTo(sx, MT + ph); ctx.moveTo(ML, sy); ctx.lineTo(sx - 5, sy); ctx.moveTo(sx + 5, sy); ctx.lineTo(ML + pw, sy); ctx.stroke(); ctx.globalAlpha = 1; }
+    if (T.hover) {
+      var hs = this.cellSol(T, T.hover); if (hs) {
+        var hx = X2(hs.dep), hy = Y2(hs.tof), ok = hs.dv <= cap; ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.beginPath(); ctx.arc(hx, hy, 4, 0, Math.PI * 2); ctx.stroke();
+        var lines = [jdDate(hs.dep) + ' + ' + Math.round(hs.tof) + ' d', 'Δv ' + hs.dv1.toFixed(2) + ' + ' + hs.dv2.toFixed(2) + ' = ' + hs.dv.toFixed(2), (ok ? 'margin +' : 'short ') + Math.abs(cap - hs.dv).toFixed(2)];
+        ctx.font = '10px "IBM Plex Mono", monospace'; var tw = 0; lines.forEach(function (l) { tw = Math.max(tw, ctx.measureText(l).width); });
+        var bx = hx + 12 + tw + 14 > ML + pw ? hx - tw - 26 : hx + 12, by = Math.min(hy + 8, MT + ph - 50);
+        ctx.fillStyle = 'rgba(13,17,21,0.95)'; ctx.fillRect(bx, by, tw + 12, 50); ctx.strokeStyle = '#36424e'; ctx.strokeRect(bx + 0.5, by + 0.5, tw + 11, 49);
+        lines.forEach(function (l, i) { ctx.fillStyle = i === 2 ? (ok ? '#5cb8e6' : '#e0a040') : i === 1 ? '#ffffff' : '#aab3bc'; ctx.fillText(l, bx + 6, by + 14 + i * 14); });
+      }
+    }
+  }
+  contour(ctx, T, L, col, wdt, label, frac, ML, MT, pw, ph) {
+    var NX = T.NX, NY = T.NY, cw = pw / (NX - 1), chh = ph / (NY - 1), segs = [], G = T.dv;
+    for (var j = 0; j < NY - 1; j++) for (var i = 0; i < NX - 1; i++) {
+      var a = G[j * NX + i], b = G[j * NX + i + 1], c = G[(j + 1) * NX + i + 1], d = G[(j + 1) * NX + i]; if ((a > L) === (b > L) && (b > L) === (c > L) && (c > L) === (d > L)) continue;
+      var e = [], f = function (v0, v1) { return (L - v0) / (v1 - v0); }, px = function (ii) { return ML + ii * cw; }, py = function (jj) { return MT + ph - jj * chh; };
+      if ((a > L) !== (b > L)) e.push([px(i + f(a, b)), py(j)]); if ((b > L) !== (c > L)) e.push([px(i + 1), py(j + f(b, c))]); if ((c > L) !== (d > L)) e.push([px(i + 1 - f(c, d)), py(j + 1)]); if ((d > L) !== (a > L)) e.push([px(i), py(j + 1 - f(d, a))]);
+      if (e.length >= 2) segs.push([e[0], e[1]]); if (e.length === 4) segs.push([e[2], e[3]]);
+    }
+    ctx.strokeStyle = col; ctx.lineWidth = wdt; ctx.beginPath(); segs.forEach(function (s) { ctx.moveTo(s[0][0], s[0][1]); ctx.lineTo(s[1][0], s[1][1]); }); ctx.stroke();
+    if (label && segs.length > 6) { var tx = ML + pw * frac, best = null, bd = 1e9; segs.forEach(function (s) { var dd = Math.abs(s[0][0] - tx) + (s[0][1] < MT + 12 || s[0][1] > MT + ph - 8 ? 1e4 : 0); if (dd < bd) { bd = dd; best = s; } }); if (best && bd < 1e4) { var t = String(L), x = best[0][0], y = best[0][1]; ctx.font = '9px "IBM Plex Mono", monospace'; var tw = ctx.measureText(t).width; ctx.fillStyle = 'rgba(7,9,11,0.85)'; ctx.fillRect(x - tw / 2 - 2, y - 6, tw + 4, 12); ctx.fillStyle = '#c4ccd3'; ctx.fillText(t, x - tw / 2, y + 3); } }
+  }
+  drawStrip(w) {
+    var cv = this.wsv[w.id], T = w.T, S = T.strip; if (!cv || !cv.isConnected || !S) return; var PW = 640, PH = 54, ML = 44, MR = 10, pw = PW - ML - MR, top = 6, bot = PH - 14;
+    var ctx = cv.getContext('2d'), dpr = cv.width / PW; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.fillStyle = '#07090b'; ctx.fillRect(0, 0, PW, PH);
+    var cap = this.fleetCap(this.W.O[T.fid], T.opts).dv - 0.3, mn = 99, mx = 0; S.pts.forEach(function (p) { mn = Math.min(mn, p.dv); mx = Math.max(mx, Math.min(p.dv, mn + 25)); }); var lo = Math.floor(mn) - 1, hi = Math.max(lo + 6, Math.min(mx, lo + 20));
+    var X = function (jd) { return ML + (jd - S.t0) / S.span * pw; }, Y = function (v) { return top + (bot - top) * (Math.min(hi, Math.max(lo, v)) - lo) / (hi - lo); };
+    ctx.font = '9px "IBM Plex Mono", monospace';
+    var d0 = new Date((S.t0 - 2440587.5) * 86400000).getUTCFullYear(); for (var yr = d0 + 1; yr <= d0 + 6; yr++) { var x = X(strToJd(yr + '-01-01')); ctx.fillStyle = 'rgba(160,170,180,0.12)'; ctx.fillRect(x, top, 1, bot - top); ctx.fillStyle = '#8b96a1'; ctx.fillText(String(yr), x - 11, PH - 3); }
+    var x0 = X(T.depStart), x1 = X(T.depStart + T.span); ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fillRect(x0, top, x1 - x0, bot - top); ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.strokeRect(x0 + 0.5, top + 0.5, x1 - x0, bot - top);
+    ctx.fillStyle = 'rgba(92,184,230,0.25)'; S.pts.forEach(function (p, i) { if (p.dv <= cap && i < S.pts.length - 1) ctx.fillRect(X(p.dep), Y(p.dv), X(S.pts[i + 1].dep) - X(p.dep) + 0.5, bot - Y(p.dv)); });
+    ctx.strokeStyle = '#c4ccd3'; ctx.lineWidth = 1; ctx.beginPath(); S.pts.forEach(function (p, i) { if (i) ctx.lineTo(X(p.dep), Y(p.dv)); else ctx.moveTo(X(p.dep), Y(p.dv)); }); ctx.stroke();
+    ctx.fillStyle = '#8b96a1'; ctx.fillText('WINDOWS', 4, 14); ctx.fillText(lo + '–' + hi, 4, 26);
+  }
+
+  draw() {
+    var cv = this.cv, W = this.W, S = this.S; if (!cv) return;
+    var ctx = cv.getContext('2d'), dpr = cv.width / VW; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.fillStyle = '#06080a'; ctx.fillRect(0, 0, VW, VH);
+    var jd = S.jd, cache = {}, self = this, fpN = this.posOf(S.focus, jd, cache), fp = fpN;
+    if (S.tTrans < 1 && S.fromId) { var fo = this.posOf(S.fromId, jd, cache), k = S.tTrans < 0.5 ? 2 * S.tTrans * S.tTrans : 1 - Math.pow(-2 * S.tTrans + 2, 2) / 2; fp = [fo[0] + (fpN[0] - fo[0]) * k, fo[1] + (fpN[1] - fo[1]) * k, fo[2] + (fpN[2] - fo[2]) * k]; }
+    var d = Math.pow(10, S.logD), cyw = Math.cos(S.yaw), syw = Math.sin(S.yaw), cp = Math.cos(S.pitch), sp = Math.sin(S.pitch);
+    var C = [d * cp * cyw, d * cp * syw, d * sp], f = [-cp * cyw, -cp * syw, -sp], r = [-syw, cyw, 0], u = [r[1] * f[2] - r[2] * f[1], r[2] * f[0] - r[0] * f[2], r[0] * f[1] - r[1] * f[0]];
+    var F = (VH / 2) / Math.tan(20 * D2R), cx = VW / 2, cy = VH / 2;
+    function proj(p) { var vx = p[0] - fp[0] - C[0], vy = p[1] - fp[1] - C[1], vz = p[2] - fp[2] - C[2], z = vx * f[0] + vy * f[1] + vz * f[2]; if (z <= d * 1e-3) return null; return [cx + (vx * r[0] + vy * r[1] + vz * r[2]) / z * F, cy - (vx * u[0] + vy * u[1] + vz * u[2]) / z * F, z]; }
+    function depthOf(p) { return Math.max(1e-9, len3([p[0] - fp[0] - C[0], p[1] - fp[1] - C[1], p[2] - fp[2] - C[2]])); }
+    function poly(pts, col, wdt, dash) { if (pts.length < 2) return; ctx.strokeStyle = col; ctx.lineWidth = wdt; ctx.setLineDash(dash || []); ctx.beginPath(); var pen = false; pts.forEach(function (q) { if (!q || Math.abs(q[0]) > 2e5 || Math.abs(q[1]) > 2e5) { pen = false; return; } if (pen) ctx.lineTo(q[0], q[1]); else { ctx.moveTo(q[0], q[1]); pen = true; } }); ctx.stroke(); ctx.setLineDash([]); }
+    var picks = [], labels = [], sel = S.sel, foc = S.focus;
+
+    var useAU = d > 2.5e7, cand = useAU ? [0.05, 0.1, 0.2, 0.5, 1, 2, 3, 5, 10, 20, 30, 50, 100].map(function (x) { return x * AU; }) : [];
+    if (!useAU) for (var e10 = 0; e10 < 9; e10++) [1, 2, 5].forEach(function (m) { cand.push(m * Math.pow(10, e10)); });
+    var rings = cand.filter(function (x) { return x > d * 0.06 && x < d * 1.7; }); if (rings.length > 4) rings = rings.filter(function (x, i) { return i % 2 === (rings.length % 2 ? 0 : 1) || x === rings[rings.length - 1]; });
+    rings.forEach(function (R) { var pts = []; for (var j = 0; j <= 128; j++) { var a = j / 128 * Math.PI * 2, q = proj([fp[0] + R * Math.cos(a), fp[1] + R * Math.sin(a), fp[2]]); pts.push(q); } poly(pts, 'rgba(120,140,160,0.11)', 1); var lq = proj([fp[0] + R * r[0], fp[1] + R * r[1], fp[2]]); if (lq) { ctx.fillStyle = 'rgba(150,165,180,0.5)'; ctx.font = '9.5px "IBM Plex Mono", monospace'; ctx.fillText(useAU ? (R / AU) + ' AU' : fmtInt(R) + ' km', lq[0] + 4, lq[1] - 3); } });
+    if (foc !== 'sun') { var sd = sub3([0, 0, 0], fp), sl = len3(sd), Ls = Math.min(sl, (rings.length ? rings[rings.length - 1] : d) * 1.05), a0 = proj(fp), a1 = proj([fp[0] + sd[0] / sl * Ls, fp[1] + sd[1] / sl * Ls, fp[2] + sd[2] / sl * Ls]); if (a0 && a1) { poly([a0, a1], 'rgba(246,239,220,0.22)', 1, [2, 4]); ctx.fillStyle = 'rgba(246,239,220,0.55)'; ctx.font = '9.5px "IBM Plex Mono", monospace'; ctx.fillText('SUN', a1[0] + 4, a1[1] + 3); } }
+
+    ctx.fillStyle = 'rgba(150,162,174,0.4)'; ctx.beginPath();
+    for (var bi = 0; bi < W.B.length; bi++) { var b = W.B[bi]; if (b.cat < 4) continue; var q = proj(this.posOf(b.id, jd, cache)); if (!q || q[0] < -5 || q[0] > VW + 5 || q[1] < -5 || q[1] > VH + 5) continue; ctx.rect(q[0] - 0.7, q[1] - 0.7, 1.4, 1.4); if (b.R >= 120 || b.id === sel) { picks.push({ x: q[0], y: q[1], r: 2, id: b.id, pri: 0 }); if (b.R >= 200 && d < 3e9) labels.push({ x: q[0] + 3, y: q[1] - 3, t: b.name, c: 'rgba(160,170,180,0.7)', pri: 1, f: 10 }); } }
+    ctx.fill();
+
+    var majorIds = {};
+    for (var oi = 1; oi < W.B.length; oi++) {
+      var ob = W.B[oi]; if (ob.cat > 3 && ob.id !== sel && ob.id !== foc) continue; if (ob.cat === 3 && ob.R < 90 && ob.id !== sel && ob.id !== foc && ob.id !== 'phobos' && ob.id !== 'deimos') continue;
+      var pp = this.posOf(W.B[ob.par].id, jd, cache), px = ob.el.a / depthOf(pp) * F, al = Math.max(0, Math.min(1, (px - 8) / 60)), farR = Math.abs(ob.el.a - len3(sub3(fp, pp))) / d; if (farR > 10) al *= Math.max(0, 1 - Math.log10(farR / 10)); if (ob.id === sel || ob.id === foc) al = 1; if (al <= 0.01) continue; majorIds[ob.id] = al;
+      var base = ob.cat === 1 ? 0.4 : ob.cat === 3 ? 0.28 : 0.24, pts = [], tmp = [0, 0, 0];
+      for (var j = 0; j <= 180; j++) { elemPosE(ob.el, jd, j / 180 * Math.PI * 2, tmp); var qo = proj([tmp[0] + pp[0], tmp[1] + pp[1], tmp[2] + pp[2]]); pts.push(qo); }
+      poly(pts, ob.id === sel ? 'rgba(220,228,235,0.75)' : 'rgba(130,150,170,' + (base * al).toFixed(3) + ')', ob.id === sel ? 1.2 : 1);
+    }
+    for (var bj = 0; bj < W.B.length; bj++) {
+      var bb = W.B[bj]; if (bb.cat > 3 && bb.id !== sel && bb.id !== foc) continue; if (bb.cat === 3 && majorIds[bb.id] == null && bb.id !== sel && bb.id !== foc) continue;
+      var P = this.posOf(bb.id, jd, cache), qq = proj(P); if (!qq || qq[0] < -200 || qq[0] > VW + 200 || qq[1] < -200 || qq[1] > VH + 200) continue;
+      var pr = bb.R / qq[2] * F, al2 = bb.cat === 3 ? (majorIds[bb.id] || 1) : 1, colr = BODY_COL[bb.id] || (bb.cat === 3 ? '#9a9892' : '#8d8881'); ctx.globalAlpha = al2;
+      if (bb.id === 'sun') { ctx.fillStyle = '#fbf4e2'; ctx.beginPath(); ctx.arc(qq[0], qq[1], Math.max(4, pr), 0, Math.PI * 2); ctx.fill(); }
+      else if (pr < 2.2) { ctx.fillStyle = colr; ctx.beginPath(); ctx.arc(qq[0], qq[1], bb.cat === 1 ? 3 : bb.cat === 2 ? 2.4 : 2, 0, Math.PI * 2); ctx.fill(); }
+      else { var sv = sub3([0, 0, 0], P), sL = len3(sv); sv = [sv[0] / sL, sv[1] / sL, sv[2] / sL]; var sx = sv[0] * r[0] + sv[1] * r[1] + sv[2] * r[2], sy = sv[0] * u[0] + sv[1] * u[1] + sv[2] * u[2], sz = sv[0] * f[0] + sv[1] * f[1] + sv[2] * f[2]; drawSphere(ctx, qq[0], qq[1], pr, colr, Math.atan2(-sy, sx), -sz); ctx.strokeStyle = 'rgba(120,135,150,0.22)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(qq[0], qq[1], pr, 0, Math.PI * 2); ctx.stroke(); if (bb.id === 'saturn') { ctx.strokeStyle = 'rgba(207,189,147,0.45)'; ctx.lineWidth = Math.max(1, pr * 0.25); ctx.beginPath(); ctx.ellipse(qq[0], qq[1], pr * 2.1, pr * 2.1 * Math.abs(sp) + 0.5, 0, 0, Math.PI * 2); ctx.stroke(); } }
+      ctx.globalAlpha = 1; picks.push({ x: qq[0], y: qq[1], r: Math.max(3, pr), id: bb.id, pri: bb.cat === 1 ? 3 : bb.cat === 0 ? 4 : 2 });
+      labels.push({ x: qq[0] + Math.max(3, pr * 0.72), y: qq[1] - Math.max(3, pr * 0.72), t: bb.cat <= 1 ? bb.name.toUpperCase() : bb.name, c: bb.id === sel ? '#ffffff' : bb.cat <= 1 ? 'rgba(214,220,226,0.88)' : 'rgba(175,184,192,' + (0.85 * al2).toFixed(2) + ')', pri: bb.id === sel ? 10 : bb.id === foc ? 9 : bb.cat <= 1 ? 6 : bb.cat === 2 ? 4 : 3, f: bb.cat <= 1 ? 10.5 : 10, ls: bb.cat <= 1 });
+    }
+
+    function arcPts(A) { var out = { past: [], fut: [] }, tmp = [0, 0, 0]; for (var j = 0; j <= 160; j++) { var tj = A.dep + (A.arr - A.dep) * j / 160; elemPos(A.el, tj, tmp); var q = proj(tmp); (tj < jd ? out.past : out.fut).push(q); } return out; }
+    W.list.forEach(function (o) {
+      [o.transit ? { el: o.transit.el, dep: o.transit.dep, arr: o.transit.arr } : null, o.plan || null].forEach(function (A, idx) {
+        if (!A) return; var pts = arcPts(A), isSel = o.id === sel, col = '92,184,230';
+        poly(pts.past, 'rgba(' + col + ',0.32)', 1); poly(pts.fut, 'rgba(' + col + ',' + (isSel ? 0.95 : 0.6) + ')', isSel ? 1.4 : 1, idx ? [6, 4] : [3, 3]);
+        var e = pts.fut.filter(Boolean).pop(); if (e) { poly([[e[0] - 4, e[1] - 4], [e[0] + 4, e[1] + 4]], 'rgba(' + col + ',0.9)', 1); poly([[e[0] + 4, e[1] - 4], [e[0] - 4, e[1] + 4]], 'rgba(' + col + ',0.9)', 1); if (isSel) labels.push({ x: e[0] + 6, y: e[1] + 12, t: (idx ? 'PLAN ' : 'ARR ') + jdDate(A.arr), c: 'rgba(' + col + ',0.95)', pri: 8, f: 9.5, mono: true }); }
+      });
+    });
+    // transfer-window previews: dashed arc plus ghost bodies at departure and arrival
+    this.wins.forEach(function (w) {
+      if (w.type !== 'transfer' || !w.T || !w.T.ghost || w.T.committed) return; var G = w.T.ghost, pts = arcPts(G).past.concat(arcPts(G).fut);
+      poly(pts, 'rgba(255,255,255,0.7)', 1.2, [2, 3]);
+      [[G.from, G.dep, 'DEP'], [G.to, G.arr, 'ARR']].forEach(function (g) { var c2 = {}, q = proj(self.posOf(g[0], g[1], c2)); if (!q) return; ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(q[0], q[1], 5, 0, Math.PI * 2); ctx.stroke(); labels.push({ x: q[0] + 8, y: q[1] + 14, t: g[2] + ' ' + W.O[g[0]].name + ' ' + jdDate(g[1]), c: '#ffffff', pri: 8.5, f: 9.5, mono: true }); });
+    });
+
+    W.list.forEach(function (o) {
+      if (o.kind !== 'contact') return; var col = o.side === 'unk' ? '224,160,64' : '201,206,212';
+      if (o.track === 'group') { var tmp = [0, 0, 0], pts = [], el = o.orbit, Mn = el.M0 + el.n * (jd - el.ep); for (var j = -12; j <= 12; j++) { elemPos(Object.assign({}, el, { M0: Mn + o.sigM * j / 12, ep: jd }), jd, tmp); var q = proj(tmp); if (q) pts.push(q); } if (pts.length > 1) { var mid = pts[Math.floor(pts.length / 2)]; ctx.lineCap = 'round'; poly(pts, 'rgba(' + col + ',0.13)', Math.max(5, o.sigX / mid[2] * F * 2)); poly(pts, 'rgba(' + col + ',0.35)', 1); ctx.lineCap = 'butt'; } }
+      else if (o.track === 'fix') { var P = self.posOf(o.id, jd, cache); o.sensors.forEach(function (sid) { var s = self.posOf(sid, jd, cache), dv = sub3(P, s), R = len3(dv), n = [dv[0] / R, dv[1] / R, dv[2] / R]; for (var j = 0; j < 10; j++) { var a = 0.55 + j * 0.09, q1 = proj([s[0] + n[0] * R * a, s[1] + n[1] * R * a, s[2] + n[2] * R * a]), q2 = proj([s[0] + n[0] * R * (a + 0.09), s[1] + n[1] * R * (a + 0.09), s[2] + n[2] * R * (a + 0.09)]); if (q1 && q2) poly([q1, q2], 'rgba(' + col + ',' + (0.55 * (1 - Math.abs(j - 4.5) / 5)).toFixed(2) + ')', 1); } }); var qf = proj(P); if (qf) { var rr = Math.max(5, 0.004 * AU / qf[2] * F); ctx.setLineDash([2, 2]); ctx.strokeStyle = 'rgba(' + col + ',0.8)'; ctx.beginPath(); ctx.ellipse(qf[0], qf[1], rr * 1.6, rr, 0.4, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]); } }
+      else if (o.track === 'bearing') { var s2 = self.posOf(o.sensors[0], jd, cache), dv2 = sub3(o.dirTo, s2), L2 = len3(dv2), n2 = [dv2[0] / L2, dv2[1] / L2, dv2[2] / L2]; for (var j2 = 0; j2 < 24; j2++) { var ra = o.rmin + (o.rmax - o.rmin) * j2 / 24, rb = o.rmin + (o.rmax - o.rmin) * (j2 + 0.6) / 24, q3 = proj([s2[0] + n2[0] * ra, s2[1] + n2[1] * ra, s2[2] + n2[2] * ra]), q4 = proj([s2[0] + n2[0] * rb, s2[1] + n2[1] * rb, s2[2] + n2[2] * rb]); if (q3 && q4) poly([q3, q4], 'rgba(' + col + ',' + (0.6 * Math.sin(Math.PI * (j2 + 0.5) / 24)).toFixed(2) + ')', 1.2); } }
+    });
+
+    if (sel && this.isOwnFleet(sel) && d < 3e6) {
+      var me0 = self.posOf(sel, jd, cache);
+      W.list.forEach(function (o) { if (o.side === 'own' || o.kind === 'station') return; var p0 = self.posOf(o.id, jd, cache); if (len3(sub3(p0, me0)) > 2e6) return; var best = 1e18, bt = 0, bA = null, bB = null; for (var j = 1; j <= 288; j++) { var tj = jd + j * 5 / 1440, c2 = {}, a = self.posOf(sel, tj, c2), b3 = self.posOf(o.id, tj, c2), dd = len3(sub3(a, b3)); if (dd < best) { best = dd; bt = tj; bA = a; bB = b3; } } if (bA && bt < jd + 0.999) { var qa = proj(bA), qb = proj(bB); if (qa && qb) { poly([qa, qb], 'rgba(255,255,255,0.7)', 1, [4, 3]); ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.strokeRect(qa[0] - 2.5, qa[1] - 2.5, 5, 5); ctx.strokeRect(qb[0] - 2.5, qb[1] - 2.5, 5, 5); labels.push({ x: (qa[0] + qb[0]) / 2 + 6, y: (qa[1] + qb[1]) / 2 - 4, t: 'CPA ' + fmtInt(best) + ' km · T+' + fmtDur((bt - jd) * 86400), c: '#ffffff', pri: 9, f: 10, mono: true }); } } });
+    }
+
+    W.list.forEach(function (o) {
+      var P = self.posOf(o.id, jd, cache), q = proj(P); if (!q || q[0] < -40 || q[0] > VW + 40 || q[1] < -40 || q[1] > VH + 40) return;
+      var col = o.side === 'own' ? COL.own : o.side === 'unk' ? COL.unk : COL.other;
+      if (d < 3e6 && o.kind !== 'station') { var c3 = {}, P1 = self.posOf(o.id, jd + 1 / 24, c3), F1 = self.posOf(foc, jd + 1 / 24, c3), q1 = proj([P1[0] - F1[0] + fpN[0], P1[1] - F1[1] + fpN[1], P1[2] - F1[2] + fpN[2]]); if (q1 && Math.hypot(q1[0] - q[0], q1[1] - q[1]) > 3) { ctx.globalAlpha = 0.6; poly([q, q1], col, 1); ctx.globalAlpha = 1; } }
+      ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 1.5;
+      if (o.kind === 'fleet') { ctx.beginPath(); ctx.moveTo(q[0], q[1] - 6); ctx.lineTo(q[0] + 6, q[1]); ctx.lineTo(q[0], q[1] + 6); ctx.lineTo(q[0] - 6, q[1]); ctx.closePath(); ctx.fillStyle = '#06080a'; ctx.fill(); ctx.stroke(); ctx.fillStyle = col; ctx.fillRect(q[0] - 1.2, q[1] - 1.2, 2.4, 2.4); }
+      else if (o.kind === 'station') { if (o.side === 'own') ctx.fillRect(q[0] - 4, q[1] - 4, 8, 8); else { ctx.fillStyle = '#06080a'; ctx.fillRect(q[0] - 4, q[1] - 4, 8, 8); ctx.strokeRect(q[0] - 4, q[1] - 4, 8, 8); } }
+      else { ctx.beginPath(); ctx.arc(q[0], q[1], 5, 0, Math.PI * 2); ctx.fillStyle = '#06080a'; ctx.fill(); ctx.stroke(); if (o.side === 'unk') { ctx.fillStyle = col; ctx.font = '600 8px "IBM Plex Sans Condensed", sans-serif'; ctx.fillText('?', q[0] - 2, q[1] + 3); } }
+      picks.push({ x: q[0], y: q[1], r: 6, id: o.id, pri: 6 });
+      labels.push({ x: q[0] + 9, y: q[1] + 4, t: o.name.toUpperCase() + (o.kind === 'fleet' && o.ships && o.side === 'own' ? ' ·' + o.ships.length : '') + (o.kind === 'contact' ? '  ' + fmtDur(o.age) : ''), c: col, pri: o.id === sel ? 10 : 7, f: 10.5, ls: true });
+    });
+    if (sel && W.O[sel]) { var sq = proj(this.posOf(sel, jd, cache)); if (sq) { var so = W.O[sel], rad = so.kind === 'body' ? Math.max(7, so.R / sq[2] * F + 4) : 10; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.3; [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(function (c) { var x0 = sq[0] + c[0] * rad, y0 = sq[1] + c[1] * rad; ctx.beginPath(); ctx.moveTo(x0, y0 - c[1] * 4); ctx.lineTo(x0, y0); ctx.lineTo(x0 - c[0] * 4, y0); ctx.stroke(); }); } }
+
+    if (S.armed && S.mouse) {
+      var src = S.armedFor ? null : (sel ? proj(this.posOf(sel, jd, cache)) : null), hv = S.hover, ok = hv && this.validTarget(S.armed, hv), tq = hv ? proj(this.posOf(hv, jd, cache)) : null, end2 = tq || [S.mouse.x, S.mouse.y];
+      if (src) poly([src, end2], ok ? '#ffd08a' : 'rgba(255,208,138,0.45)', 1.2, [5, 4]);
+      if (hv) { var txt = ok ? W.O[hv].name + (S.armed === 'transfer' ? ' · opens planner' : '') : 'Not a valid target for ' + S.armed; ctx.font = '10.5px "IBM Plex Mono", monospace'; var tw = ctx.measureText(txt).width; ctx.fillStyle = 'rgba(42,29,8,0.95)'; ctx.fillRect(end2[0] + 12, end2[1] + 10, tw + 12, 18); ctx.strokeStyle = '#a8742a'; ctx.strokeRect(end2[0] + 12.5, end2[1] + 10.5, tw + 11, 17); ctx.fillStyle = ok ? '#ffd9a0' : '#c9a77a'; ctx.fillText(txt, end2[0] + 18, end2[1] + 23); }
+    }
+    labels.sort(function (a, b) { return b.pri - a.pri; }); var taken = [];
+    labels.forEach(function (l) { ctx.font = (l.mono ? '' : '500 ') + l.f + 'px ' + (l.mono ? '"IBM Plex Mono", monospace' : '"IBM Plex Sans Condensed", sans-serif'); var w = ctx.measureText(l.t).width + (l.ls ? l.t.length * 0.6 : 0), box = [l.x - 1, l.y - l.f, l.x + w + 1, l.y + 3]; if (box[2] < 0 || box[0] > VW || box[3] < 0 || box[1] > VH) return; for (var i = 0; i < taken.length; i++) { var t = taken[i]; if (box[0] < t[2] && box[2] > t[0] && box[1] < t[3] && box[3] > t[1]) return; } taken.push(box); ctx.fillStyle = l.c; if (l.ls && ctx.letterSpacing !== undefined) { ctx.letterSpacing = '0.6px'; ctx.fillText(l.t, l.x, l.y); ctx.letterSpacing = '0px'; } else ctx.fillText(l.t, l.x, l.y); });
+
+    if (S.hover && !S.armed && S.mouse && W.O[S.hover] && !this.drag) {
+      var ho = W.O[S.hover], hp = this.posOf(S.hover, jd, cache), lines = [ho.name], de = len3(sub3(hp, this.posOf('earth', jd, cache)));
+      lines.push('Earth ' + fmtKm(de) + ' · light ' + fmtDur(de / CKMS)); if (sel && sel !== S.hover && W.O[sel]) lines.push('From ' + W.O[sel].name + ' ' + fmtKm(len3(sub3(hp, this.posOf(sel, jd, cache))))); if (ho.kind === 'contact') lines.push('Picture age ' + fmtDur(ho.age));
+      ctx.font = '10.5px "IBM Plex Mono", monospace'; var tw2 = 0; lines.forEach(function (l) { tw2 = Math.max(tw2, ctx.measureText(l).width); }); var bx = Math.min(S.mouse.x + 14, VW - tw2 - 22), by = Math.min(S.mouse.y + 14, VH - lines.length * 15 - 14);
+      ctx.fillStyle = 'rgba(13,17,21,0.95)'; ctx.fillRect(bx, by, tw2 + 14, lines.length * 15 + 8); ctx.strokeStyle = '#36424e'; ctx.lineWidth = 1; ctx.strokeRect(bx + 0.5, by + 0.5, tw2 + 13, lines.length * 15 + 7); lines.forEach(function (l, i) { ctx.fillStyle = i ? '#aab3bc' : '#ffffff'; ctx.fillText(l, bx + 7, by + 15 + i * 15); });
+    }
+    var kmpx = d / F, target = 110 * kmpx, mag = Math.pow(10, Math.floor(Math.log10(target))), nice = [1, 2, 5, 10].map(function (m) { return m * mag; }).filter(function (v) { return v <= target; }).pop() || mag, bw = nice / kmpx, sxr = VW - 70 - bw, syr = VH - 22;
+    ctx.strokeStyle = 'rgba(170,179,188,0.8)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(sxr, syr); ctx.lineTo(sxr + bw, syr); ctx.moveTo(sxr, syr - 4); ctx.lineTo(sxr, syr + 4); ctx.moveTo(sxr + bw, syr - 4); ctx.lineTo(sxr + bw, syr + 4); ctx.stroke();
+    ctx.fillStyle = 'rgba(170,179,188,0.8)'; ctx.font = '10px "IBM Plex Mono", monospace'; ctx.fillText(nice >= 1e8 ? (nice / AU).toPrecision(2) + ' AU' : fmtInt(nice) + ' km', sxr, syr - 8);
+    this.picks = picks;
+  }
+  bandOf(logD) { var d = Math.pow(10, logD); return d < 50 ? 'Ship' : d < 3e4 ? 'Engagement' : d < 2e6 ? 'Orbit' : d < 6e7 ? 'Body' : 'System'; }
+  gcls(o) { if (o.kind === 'body') return o.cat === 0 ? 'g-star' : 'g-body'; if (o.side === 'unk') return 'g-unk'; return 'g-' + o.kind.replace('contact', 'fleet') + '-' + (o.side === 'own' ? 'own' : 'other'); }
+
+  // ---------- window view-models ----------
+  winVM(w) {
+    var self = this, W = this.W, S = this.S, o = W.O[w.obj], jd = S.jd, c = {}, h = this.ensure();
+    var vm = { id: w.id, x: w.x, y: w.y, w: WIN_W[w.type], z: w.z, open: !w.shaded, title: '', hint: '', gcls: 'g-none', tst: w.preview && !w.sticky ? 'font-style: italic; color: #c4ccd3' : '', bcol: w.z === this.zTop ? '#3a4652' : '#2a323b',
+      pinCls: w.sticky ? 'wb on' : 'wb', pinFill: w.sticky ? 'currentColor' : 'none', canCentre: false, hasView: false, hasCol: false, hasTabs: false, showShips: false, showOrders: false, showKv: false, showStock: false, showCls: false, isTransfer: false, isOutliner: false, isLog: false, hasStatus: false, kv: [], ships: [], orders: [], stock: [], cls: [], srcs: [], tabs: [], col: [], rows: [], trKv: [], trOpts: [], trBurns: [] };
+    var wid = w.id;
+    vm.raise = this.fn('raise' + wid, function () { return function () { if (w.z !== self.zTop) { w.z = ++self.zTop; self.bump(); } }; });
+    vm.drag = this.fn('drag' + wid, function () { return function (e) { if (e.button !== 0 || (e.target.closest && e.target.closest('button'))) return; e.preventDefault(); var sc = self.scale(), st = { mx: e.clientX, my: e.clientY, x: w.x, y: w.y }; self.winMove = function (ev) { w.x = Math.round(Math.max(-WIN_W[w.type] + 80, Math.min(VW - 80, st.x + (ev.clientX - st.mx) / sc))); w.y = Math.round(Math.max(0, Math.min(VH - 30, st.y + (ev.clientY - st.my) / sc))); if (w.preview) w.preview = false; self.bump(); }; self.winUp = function () { self.endDrag(); }; document.addEventListener('mousemove', self.winMove); document.addEventListener('mouseup', self.winUp); }; });
+    vm.shade = this.fn('shade' + wid, function () { return function () { w.shaded = !w.shaded; self.bump(); }; });
+    vm.close = this.fn('close' + wid, function () { return function () { self.wins = self.wins.filter(function (x) { return x !== w; }); if (w.type === 'transfer') { } self.bump(); }; });
+    vm.pin = this.fn('pin' + wid, function () { return function () { w.sticky = !w.sticky; w.preview = false; self.bump(); }; });
+    vm.cvRef = this.fn('cv' + wid, function () { return function (el) { if (!el) return; var vw = el.clientWidth || 380, vh = el.clientHeight || 150, dpr = window.devicePixelRatio || 1; el._w = vw; el._h = vh; if (el.width !== vw * dpr) { el.width = vw * dpr; el.height = vh * dpr; } self.wcv[wid] = el; }; });
+    if (o && w.type !== 'outliner' && w.type !== 'log') { vm.canCentre = true; vm.centre = this.fn('centre' + wid, function () { return function () { self.focusOn(w.obj); }; }); vm.gcls = this.gcls(o); }
+    var E = this.posOf('earth', jd, c);
+    if (w.type === 'fleet') {
+      vm.title = o.name; vm.hint = o.side === 'own' ? (o.ships.length + ' units') : o.owner; vm.hasView = true; vm.hasCol = o.side === 'own'; vm.vw = WIN_W.fleet - (vm.hasCol ? 39 : 2); vm.vh = 160;
+      if (vm.hasCol) vm.col = [{ glyph: '◎', label: 'Centre map on group', run: vm.centre }, { glyph: '⤳', label: 'Plan transfer', run: this.fn('ptr' + wid, function () { return function () { self.openWin('transfer', w.obj, { target: null }); }; }) }, { glyph: '☰', label: 'Orders', run: this.fn('tor' + wid, function () { return function () { w.tab = 'orders'; self.bump(); }; }) }, { glyph: 'i', label: 'Details', run: this.fn('tde' + wid, function () { return function () { w.tab = 'details'; self.bump(); }; }) }, { glyph: '⎈', label: o.conn ? 'Return conn' : 'Take conn', run: this.fn('conn' + wid, function () { return function () { o.conn = !o.conn; self.addLog(o.name, 'own', o.conn ? 'Conn taken by the director. Doctrine suspended for this group.' : 'Conn returned. Group follows doctrine (orders at c).'); }; }) }];
+      if (o.side === 'own') {
+        vm.hasTabs = true; vm.tabs = ['ships', 'orders', 'details'].map(function (t) { return { label: t, cls: 'wtab' + (w.tab === t ? ' on' : ''), pick: self.fn('tab' + wid + t, function () { return function () { w.tab = t; self.bump(); }; }) }; });
+        var cap = this.fleetCap(o, o.opts || {}), minA = 1e9;
+        vm.ships = o.ships.map(function (s) { var dv = s.dry ? shipDv(s, (o.opts && o.opts.topUp) ? s.cap : s.prop) : s.dv, pr = s.dry ? Math.round(((o.opts && o.opts.topUp) ? s.cap : s.prop) / s.cap * 100) : s.prop, acc = s.dry ? s.thrust / (s.dry + s.prop) : s.acc; if (acc > 0) minA = Math.min(minA, acc); return { name: s.name, cls: s.cls, dv: dv ? dv.toFixed(2) : '—', dvCol: s.name.indexOf(cap.who) >= 0 ? COL.unk : '#e3e7ea', prop: pr ? pr + '%' : '—', acc: acc ? (acc < 0.1 ? acc.toFixed(3) : acc.toFixed(2)) : '—', st: s.st, stCol: s.st === 'LOW' ? COL.unk : '#9aa4ae' }; });
+        vm.showShips = w.tab === 'ships'; vm.showOrders = w.tab === 'orders'; vm.showKv = w.tab === 'details';
+        vm.orders = (o.orders || []).map(function (x, i) { return { n: i + 1 + '.', text: x.text, when: x.when, col: i === 0 ? '#ffffff' : '#c4ccd3' }; });
+        vm.planTr = this.fn('ptr2' + wid, function () { return function () { self.openWin('transfer', w.obj, { target: null }); }; });
+        vm.kv = [{ k: 'Group Δv', v: cap.dv.toFixed(2) + ' km/s · limit ' + cap.who, c: COL.own }, { k: 'Acceleration', v: minA.toFixed(3) + ' m/s²' }, { k: 'Doctrine', v: o.doctrine }, { k: 'Posture', v: o.posture }, { k: 'Spread', v: o.spread }, { k: 'Command', v: o.conn ? 'Director (conn)' : 'AI captain · orders at c' }, { k: 'From Earth', v: fmtKm(len3(sub3(this.posOf(o.id, jd, c), E))) }];
+        if (o.transit) vm.kv.push({ k: 'Arrives', v: jdDate(o.transit.arr) + ' · T−' + fmtDur((o.transit.arr - jd) * 86400) });
+        vm.hasStatus = true; vm.status = o.conn ? 'CONN' : o.status; vm.statusText = o.conn ? 'Director holds the conn' : (o.orders && o.orders[0] ? o.orders[0].text : o.statusText); vm.stCol = o.conn ? '#ffffff' : COL.own;
+        vm.statusClick = vm.centre;
+      } else {
+        vm.showKv = true; vm.kv = [{ k: 'Registered as', v: o.cls || '—' }, { k: 'Owner', v: o.owner }, { k: 'Transponder', v: 'on, matches registry' }, { k: 'Picture age', v: fmtDur(o.age || 0), c: COL.unk }, { k: 'From Earth', v: fmtKm(len3(sub3(this.posOf(o.id, jd, c), E))) }];
+        vm.hasStatus = true; vm.status = 'TRACKED'; vm.statusText = 'Approaching Luna · 1.8 km/s relative'; vm.stCol = COL.other; vm.statusClick = vm.centre;
+      }
+    } else if (w.type === 'station') {
+      vm.title = o.name; vm.hint = o.side === 'own' ? o.where : o.owner; vm.hasView = true; vm.vw = WIN_W.station - 2; vm.vh = 150;
+      if (o.stock) { vm.showStock = true; vm.stock = o.stock.map(function (s) { return { name: s.name, q: s.q, d: s.d, col: s.d && s.d.charAt(0) === '−' ? COL.unk : '#9aa4ae' }; }); }
+      vm.showKv = true; var dE = len3(sub3(this.posOf(o.id, jd, c), E)); vm.kv = [{ k: 'Owner', v: o.side === 'own' ? 'Ahti Mining Charter' : o.owner }, { k: 'Location', v: o.where }, { k: 'From Earth', v: fmtKm(dE) }, { k: 'Light time, Earth', v: fmtDur(dE / CKMS) }];
+      vm.hasStatus = !!o.status; vm.status = o.status || ''; vm.statusText = o.statusText || ''; vm.stCol = COL.own; vm.statusClick = vm.centre;
+    } else if (w.type === 'contact') {
+      vm.title = o.name; vm.hint = o.track === 'bearing' ? 'bearing only' : o.track === 'fix' ? 'cross-fix' : 'coasting'; vm.hasView = true; vm.vw = WIN_W.contact - 2; vm.vh = 130; vm.showCls = true; vm.showKv = true;
+      var P = this.posOf(o.id, jd, c);
+      vm.kv = o.track === 'fix' ? [{ k: 'Range, Ceres Hub', v: fmtKm(len3(sub3(P, this.posOf('ceres-hub', jd, c)))) + ' ± 0.004 AU' }, { k: 'Signature', v: 'IR 1 500 K, ~10 GW' }, { k: 'Acceleration', v: '≈ 0.02 m/s² (3σ 0.01–0.05)' }] : o.track === 'bearing' ? [{ k: 'Range', v: 'unknown · 1.5–4.5 AU' }, { k: 'Signature', v: 'IR 600 K, 10–80 MW' }, { k: 'To get range', v: 'second sensor ≥ 0.1 AU off-axis' }] : [{ k: 'Along-track σ', v: o.sigM.toFixed(1) + '°' }, { k: 'Cross-track σ', v: fmtInt(o.sigX) + ' km' }, { k: 'Count', v: '3–4 hulls, unresolved' }];
+      vm.cls = (o.track === 'group' ? [['Patrol cutters', 70, COL.other], ['Tankers', 20, '#8b96a1'], ['Decoys', 10, '#8b96a1']] : o.track === 'fix' ? [['Torch freighter', 55, COL.unk], ['Warship', 30, COL.unk], ['Tug with load', 15, '#8b96a1']] : [['Fission tug', 45, COL.unk], ['Survey ship', 35, COL.unk], ['Unknown', 20, '#8b96a1']]).map(function (x) { return { label: x[0], p: x[1] + ' %', w: x[1], col: x[2] }; });
+      vm.srcs = o.track === 'group' ? [{ name: 'Deimos Yard feed (traded)', kind: 'radar', age: '2h 24m', col: COL.unk }] : o.sensors.map(function (sid) { return { name: W.O[sid].name, kind: 'IR, passive', age: fmtDur(len3(sub3(P, self.posOf(sid, jd, c))) / CKMS), col: '#e3e7ea' }; });
+      vm.hasStatus = true; vm.status = o.side === 'unk' ? 'UNIDENTIFIED' : 'TRACKED'; vm.statusText = 'Picture age ' + fmtDur(o.age) + ' at nearest sensor'; vm.stCol = o.side === 'unk' ? COL.unk : COL.other; vm.statusClick = vm.centre;
+    } else if (w.type === 'body') {
+      vm.title = o.name; vm.hint = ['Star', 'Planet', 'Dwarf planet', 'Moon', 'Main belt', 'NEO', 'Trojan', 'Centaur', 'TNO', 'Comet'][o.cat]; vm.hasView = true; vm.vw = WIN_W.body - 2; vm.vh = 130; vm.showKv = true;
+      var Pb = this.posOf(o.id, jd, c); vm.kv = [{ k: 'Mean radius', v: fmtInt(o.R) + ' km' }];
+      if (o.gm && o.R) vm.kv.push({ k: 'Surface gravity', v: (o.gm / (o.R * o.R) * 1000).toFixed(o.gm / (o.R * o.R) * 1000 < 1 ? 3 : 2) + ' m/s²' }, { k: 'Escape velocity', v: Math.sqrt(2 * o.gm / o.R).toFixed(3) + ' km/s' });
+      if (o.par >= 0) vm.kv.push({ k: 'Semi-major axis', v: o.par === 0 ? (o.el.a / AU).toFixed(4) + ' AU' : fmtInt(o.el.a) + ' km' }, { k: 'e · i', v: o.el.e.toFixed(4) + ' · ' + o.el.i.toFixed(2) + '°' }, { k: 'Period', v: o.el.n ? (360 / o.el.n > 800 ? (360 / o.el.n / 365.25).toFixed(2) + ' yr' : (360 / o.el.n).toFixed(2) + ' d') : '—' });
+      if (o.id !== 'earth' && o.id !== 'sun') vm.kv.push({ k: 'From Earth', v: fmtKm(len3(sub3(Pb, E))) }, { k: 'Light time', v: fmtDur(len3(sub3(Pb, E)) / CKMS) });
+      if (o.soi) vm.kv.push({ k: 'Sphere of influence', v: fmtKm(o.soi) });
+      var here = W.list.filter(function (a) { var b = a.parent; while (b && b !== 'sun') { if (b === o.id) return true; var bb = W.BI[b]; b = bb && bb.par > 0 ? W.B[bb.par].id : null; } return false; });
+      vm.hasStatus = true; vm.status = here.length ? here.length + ' KNOWN HERE' : 'NO ASSETS'; vm.statusText = here.map(function (a) { return a.name; }).join(' · ') || 'Survey data: catalogue only'; vm.stCol = here.length ? COL.own : '#8b96a1'; vm.statusClick = vm.centre;
+    } else if (w.type === 'transfer') {
+      var T = w.T, f = W.O[T.fid]; vm.isTransfer = true; vm.title = 'Transfer planner · ' + f.name; vm.gcls = 'g-fleet-own'; vm.canCentre = false;
+      vm.trFrom = T.from ? T.from.name + (f.parent === 'moon' ? ' · NRHO' : '') : f.where; vm.trTo = T.target ? W.O[T.target].name + (PARK[T.target] ? ' · ' + fmtInt(PARK[T.target]) + ' km orbit' : '') : '— none —';
+      vm.retarget = this.fn('rt' + wid, function () { return function () { self.S.armed = 'transfer'; self.S.armedFor = wid; self.setState({ armed: 'transfer' }); }; });
+      vm.trMsgOn = !!T.msg || !T.dv; vm.trMsg = T.msg || 'Solving…'; vm.trOk = !T.msg && !!T.dv;
+      vm.pcRef = this.fn('pc' + wid, function () { return function (el) { if (!el) return; var dpr = window.devicePixelRatio || 1; if (el.width !== 640 * dpr) { el.width = 640 * dpr; el.height = 290 * dpr; T.dirty = true; } self.pcv[wid] = el; }; });
+      vm.wsRef = this.fn('ws' + wid, function () { return function (el) { if (!el) return; var dpr = window.devicePixelRatio || 1; if (el.width !== 640 * dpr) { el.width = 640 * dpr; el.height = 54 * dpr; } self.wsv[wid] = el; }; });
+      var cellOf = function (e) { var cv = self.pcv[wid]; if (!cv || !T.dv) return null; var rc = cv.getBoundingClientRect(), x = (e.clientX - rc.left) * 640 / rc.width, y = (e.clientY - rc.top) * 290 / rc.height, fx = (x - 44) / (640 - 54), fy = 1 - (y - 20) / (290 - 46); if (fx < 0 || fx > 1 || fy < 0 || fy > 1) return null; return { i: Math.round(fx * (T.NX - 1)), j: Math.round(fy * (T.NY - 1)) }; };
+      vm.pcMove = this.fn('pm' + wid, function () { return function (e) { T.hover = cellOf(e); }; });
+      vm.pcLeave = this.fn('pl' + wid, function () { return function () { T.hover = null; }; });
+      vm.noCtx = this.fn('nc' + wid, function () { return function (e) { e.preventDefault(); }; });
+      var commit = function () { var s = self.cellSol(T, T.sel); if (!s) return; f.plan = { el: rv2el(s.r1, s.v1, MU_SUN, s.dep), dep: s.dep, arr: s.dep + s.tof }; f.orders = [{ text: 'Transfer to ' + W.O[T.target].name + ' · dep ' + jdDate(s.dep), when: jdDate(s.dep + s.tof).slice(5) }].concat((f.orders || []).slice(0, 2)); T.committed = true; self.addLog(f.name, 'own', 'Order: transfer to ' + W.O[T.target].name + '. Depart ' + jdDate(s.dep) + ', ' + Math.round(s.tof) + ' d, ' + s.dv.toFixed(2) + ' km/s.'); };
+      vm.pcUp = this.fn('pu' + wid, function () { return function (e) { var cl = cellOf(e); if (!cl) return; T.sel = cl; T.committed = false; self.updatePlanGhost(w); if (e.button === 2) commit(); self.bump(); }; });
+      vm.commit = this.fn('cm' + wid, function () { return function () { commit(); self.bump(); }; });
+      vm.wsUp = this.fn('wu' + wid, function () { return function (e) { if (!T.strip) return; var rc = e.currentTarget.getBoundingClientRect(), x = (e.clientX - rc.left) * 640 / rc.width, jd2 = T.strip.t0 + (x - 44) / (640 - 54) * T.strip.span; self.computeTransfer(w, Math.max(self.S.jd, Math.round(jd2 - T.span * 0.4))); self.bump(); }; });
+      if (T.dv) {
+        var capF = this.fleetCap(f, T.opts), capP = capF.dv - 0.3, s = this.cellSol(T, T.sel);
+        vm.trFleet = capF.dv.toFixed(2) + ' · ' + capF.who; vm.trCap = capP.toFixed(2) + ' km/s';
+        if (f.ships && f.ships[0] && f.ships[0].dry) {
+          var effOf = function (key) { var o2 = Object.assign({}, T.opts); o2[key] = !o2[key]; var dd = self.fleetCap(f, o2).dv - capF.dv; if (T.opts[key]) dd = -dd; return (dd >= 0 ? '+' : '−') + Math.abs(dd).toFixed(2); };
+          vm.trOpts = [['topUp', 'Top up at Shackleton (02-02)'], ['xfer', 'Cross-feed 320 t Sampo → Louhi'], ['drop', 'Detach IWS Louhi']].map(function (x) { return { label: x[1], on: !!T.opts[x[0]], eff: effOf(x[0]), toggle: self.fn('op' + wid + x[0], function () { return function (e) { T.opts[x[0]] = e.target.checked; T.dirty = true; self.bump(); }; }) }; });
+        }
+        if (s) {
+          var ok = s.dv <= capP, arr = s.dep + s.tof;
+          vm.trKv = [{ k: 'Depart', v: jdToStr(s.dep).slice(0, 16) }, { k: 'Arrive', v: jdToStr(arr).slice(0, 16) }, { k: 'Time of flight', v: Math.round(s.tof) + ' d' }, { k: 'Total Δv', v: s.dv.toFixed(2) + ' km/s', c: '#ffffff' }, { k: 'Margin', v: (ok ? '+' : '−') + Math.abs(capP - s.dv).toFixed(2) + ' km/s', c: ok ? COL.own : COL.unk }, { k: 'v∞ dep · C3', v: s.vinf1.toFixed(2) + ' · ' + s.c3.toFixed(1) }, { k: 'v∞ arrival', v: s.vinf2.toFixed(2) + ' km/s' }];
+          vm.trKv.forEach(function (k) { if (!k.c) k.c = '#e3e7ea'; });
+          var thr = 1e9; (f.ships || []).forEach(function (sh) { if (sh.dry) thr = Math.min(thr, sh.thrust / (sh.dry + sh.cap)); }); var acc = thr < 1e8 ? thr : 0.9;
+          vm.trBurns = [{ n: '1', ev: 'Injection at perilune · DLA ' + s.dla.toFixed(1) + '°', when: jdDate(s.dep).slice(2), dv: s.dv1.toFixed(2), dur: fmtHM(s.dv1 * 1000 / acc * 0.82) }, { n: '2', ev: 'Brake early for the arrival envelope', when: jdDate(arr - 2).slice(2), dv: (s.dv2 * 0.93).toFixed(2), dur: fmtHM(s.dv2 * 930 / acc * 0.62) }, { n: '3', ev: 'Circularise after 2.1 d approach', when: jdDate(arr).slice(2), dv: (s.dv2 * 0.07).toFixed(2), dur: fmtHM(s.dv2 * 70 / acc * 0.62) }];
+          vm.trNote = T.committed ? 'Order queued · arc shown solid on the map' : ok ? 'Feasible · preview arc dashed on the map' : 'Short of Δv: try a later window or top up'; vm.trNoteCol = T.committed ? COL.own : ok ? '#9aa4ae' : COL.unk;
+        }
+      }
+    } else if (w.type === 'outliner') {
+      vm.isOutliner = true; vm.title = 'Outliner'; vm.hint = 'F2'; vm.hasTabs = true; var tab = w.tab || 'assets', filter = (w.filter || '').toLowerCase();
+      vm.tabs = ['assets', 'picture', 'bodies'].map(function (t) { return { label: t, cls: 'wtab' + (tab === t ? ' on' : ''), pick: self.fn('otab' + t, function () { return function () { w.tab = t; self.bump(); }; }) }; });
+      vm.filter = w.filter || ''; vm.onFilter = this.fn('flt', function () { return function (e) { w.filter = e.target.value; self.bump(); }; });
+      var match = function (x) { return !filter || x.name.toLowerCase().indexOf(filter) >= 0 || (x.where || '').toLowerCase().indexOf(filter) >= 0 || (x.owner || '').toLowerCase().indexOf(filter) >= 0; };
+      var mk = function (x, right, rcol, indent) { return { isRow: true, isHead: false, name: x.name, right: right || '', rcol: rcol || '#9aa4ae', gcls: self.gcls(x), indent: indent || 0, st: x.id === S.sel ? 'background: #172633; box-shadow: inset 2px 0 0 #5cb8e6' : '', pick: self.fn('opk' + x.id, function () { return function () { self.select(x.id); }; }), centre: self.fn('oce' + x.id, function () { return function () { self.focusOn(x.id); }; }) }; };
+      var head = function (n, r) { return { isHead: true, isRow: false, name: n, right: r == null ? '' : r }; }, rows = [];
+      if (tab === 'assets') { var fl = W.list.filter(function (x) { return x.side === 'own' && x.kind === 'fleet' && match(x); }), sn = W.list.filter(function (x) { return x.side === 'own' && x.kind === 'station' && match(x); }), ot = W.list.filter(function (x) { return x.side === 'other' && x.kind !== 'contact' && match(x); }); rows.push(head('Groups', fl.length)); fl.forEach(function (x) { rows.push(mk(x, x.status, x.status === 'IN TRANSIT' ? COL.own : '#9aa4ae')); }); rows.push(head('Stations', sn.length)); sn.forEach(function (x) { rows.push(mk(x, x.where, '#8b96a1')); }); rows.push(head('Others, known', ot.length)); ot.forEach(function (x) { rows.push(mk(x, x.owner.replace('UN Space Authority', 'UNSA').replace('Tharsis Compact', 'Tharsis'), '#8b96a1')); }); }
+      else if (tab === 'picture') { rows.push(head('Tracks', 'age')); W.list.filter(function (x) { return (x.kind === 'contact' || x.id === 'unsa-resolute') && match(x); }).forEach(function (x) { rows.push(mk(x, fmtDur(x.age), x.age > 3600 ? COL.unk : '#9aa4ae')); }); }
+      else { var bl = W.B.filter(function (b) { return filter ? b.name.toLowerCase().indexOf(filter) >= 0 : (b.cat <= 2 || (b.cat === 3 && (b.R >= 200 || W.B[b.par].id === 'mars' || W.B[b.par].id === 'earth'))); }); if (filter) { rows.push(head('Matches', bl.length)); bl.slice(0, 60).forEach(function (b) { rows.push(mk(b, b.par > 0 ? W.B[b.par].name : '', '#8b96a1')); }); } else { rows.push(head('Sun and planets')); bl.filter(function (b) { return b.cat <= 1; }).forEach(function (b) { rows.push(mk(b, b.par === 0 ? (b.el.a / AU).toFixed(2) + ' AU' : '', '#8b96a1')); bl.filter(function (m) { return m.cat === 3 && m.par === b.i; }).forEach(function (m) { rows.push(mk(m, fmtInt(m.el.a) + ' km', '#7f8a95', 14)); }); }); rows.push(head('Dwarf planets')); bl.filter(function (b) { return b.cat === 2; }).forEach(function (b) { rows.push(mk(b, (b.el.a / AU).toFixed(2) + ' AU', '#8b96a1')); }); rows.push(head('Small bodies · type to search', W.B.filter(function (b) { return b.cat >= 4; }).length)); } }
+      vm.rows = rows;
+    } else if (w.type === 'log') { vm.isLog = true; vm.title = 'Log'; vm.hint = 'L · all sources'; vm.log = this._logVM || []; }
+    return vm;
+  }
+
+  renderVals() {
+    var h = this.ensure(), st = this.state || {}, S = this.S, W = this.W, self = this, ready = !!(st.ready && W && S);
+    var rate = st.rate || 0, jd = st.jd || NOW0, logD = st.logD || 8.95, tier = rate === 0 ? 'PAUSED' : rate < 240 ? 'FINE' : rate < 86400 ? 'COARSE' : rate < 1000000 ? 'RAILS' : 'ROUTINE';
+    var rlab = { 0: '❚❚', 1: '1×', 10: '10×', 240: '240×', 3600: '1h/s', 86400: '1d/s', 1000000: '1M×' };
+    var rates = h.rates.map(function (x) { return { label: rlab[x.r], aria: x.r ? 'Time rate ' + rlab[x.r] : 'Pause', pick: x.pick, cls: 'rate' + (x.r === rate ? ' on' : '') }; });
+    var crumbs = [];
+    if (ready) { var chain = [], id = st.focus, g = 0; while (id && g++ < 6) { chain.unshift(id); var o = W.O[id]; if (!o) break; id = o.kind === 'body' ? (o.par >= 0 ? W.B[o.par].id : null) : o.parent; } if (chain[0] !== 'sun') chain.unshift('sun'); crumbs = chain.map(function (cid, i) { return { name: W.O[cid].name, sep: i > 0, pick: self.fn('cr' + cid, function () { return function () { self.focusOn(cid); }; }), st: cid === st.focus ? 'color: #ffffff; font-weight: 600' : '' }; }); }
+    var RH = VH - 70 - 120, ticks = [[1, '10 km'], [2, '100'], [3, '1k'], [4, '10k'], [5, '100k'], [6, '1M'], [7, '10M'], [8.175, '1 AU'], [9.175, '10 AU'], [10.175, '100']].map(function (t) { return { top: (10.5 - t[0]) / 10 * RH, label: t[1] }; });
+    var sel = st.sel, ownSel = ready && this.isOwnFleet(sel), armed = st.armed, menu = st.menu, dview = Math.pow(10, logD);
+    var log = (st.log || []).map(function (l) { return { t: l.t, age: l.age, src: l.src, msg: l.msg, acol: l.age === '0.0 s' || l.age === '—' ? '#7f8a95' : (l.tone === 'unk' ? COL.unk : '#9aa4ae'), scol: l.tone === 'own' ? COL.own : l.tone === 'unk' ? COL.unk : l.tone === 'other' ? COL.other : '#c4ccd3' }; });
+    this._logVM = log;
+    var wins = ready ? this.wins.map(function (w) { return self.winVM(w); }) : [];
+    var hasType = function (t) { return self.wins && self.wins.some(function (w) { return w.type === t; }); };
+    var armedTarget = { transfer: 'pick a destination body or own station', rendezvous: 'pick an own group or station', intercept: 'pick a track or foreign ship', shadow: 'pick a track or foreign ship' };
+    return Object.assign({}, h, {
+      clock: jdToStr(jd), rates: rates, tier: tier, tierColor: rate === 0 ? '#e0a040' : '#5cb8e6', nextInterest: 'U-0412 burn end est. T−02h 41m',
+      crumbs: crumbs, band: this.bandOf(logD), viewDist: dview >= 1e8 ? (dview / AU).toFixed(2) + ' AU' : fmtInt(dview) + ' km',
+      ticks: ticks, rulerTop: (10.5 - logD) / 10 * RH,
+      armedOn: !!armed, armedVerb: armed ? armed.toUpperCase() : '', armedText: armed && ready ? (S.armedFor ? 'Planner → ' + armedTarget.transfer : (W.O[sel] ? W.O[sel].name + ' → ' : '') + armedTarget[armed]) : '',
+      cursor: armed ? 'crosshair' : 'default', menuOn: !!menu, menuX: menu ? menu.x : 0, menuY: menu ? menu.y : 0, menuTitle: menu ? menu.title : '', menuItems: menu ? menu.items : [],
+      loading: !ready, ownSel: ownSel, selName: ownSel ? W.O[sel].name : '',
+      cmds: h.cmds.map(function (c) { return { label: c.label, key: c.key, run: c.run, cls: 'btn' + (armed === c.verb ? ' on' : '') }; }),
+      log: log, tick: log[0] || { t: '', src: '', msg: '', scol: '#c4ccd3' }, wins: wins,
+      lOut: 'ib' + (hasType('outliner') ? ' on' : ''), lPic: 'ib', lTr: 'ib' + (hasType('transfer') ? ' on' : ''), lLog: 'ib' + (hasType('log') ? ' on' : '')
+    });
+  }
+}
+</script>
+</body>
+</html>
