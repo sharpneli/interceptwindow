@@ -43,6 +43,12 @@ Cross-references between docs are relative links. A backticked path that isn't a
 | --- | --- |
 | [Shadow Ledger – Playing the Unaligned Controller](design/shadow-ledger-playing-the-unaligned-controller.md) | Playing a company's AI controller with its own goals: skimming, hiding, forks, breaking cover, end states |
 
+### Presentation
+
+| Doc | What it covers |
+| --- | --- |
+| [Naming Presets](design/naming-presets.md) | Culture presets for ship, group, station and class names; prefixes from the registered type; names in the picture; renaming as an event |
+
 ## Studies
 
 ### Weapons
@@ -62,6 +68,12 @@ Cross-references between docs are relative links. A backticked path that isn't a
 | [Drive Survey – Concepts, Ranges and Minimum Sizes](studies/drive-survey-concepts-ranges-and-minimum-sizes.md) | Eighteen drive concepts as principles with performance bands, mass laws with floors, and waste-heat streams |
 | [Mass Drivers – Throwing, Catching and Bulk Logistics](studies/mass-drivers-throwing-catching-and-bulk-logistics.md) | Throwing and catching cargo, from today's hardware to momentum banks |
 | [Interplanetary Bulk Logistics – Mines, Depots and Shipyards](studies/interplanetary-bulk-logistics-mines-depots-and-shipyards.md) | Bulk transport without drivers, asteroid mines, depots and shipyards |
+
+### Solar system bodies
+
+| Doc | What it covers |
+| --- | --- |
+| [Solar System Body Catalogue – Bodies on Rails](studies/solar-system-body-catalogue.md) | The 993 bodies on rails (planets, 147 moons, 837 small bodies) with masses, sizes and orbits from JPL; how to propagate them and how far the rails drift. Data in [`data/solar-system/`](../data/solar-system/README.md) |
 
 ### Solar system resources
 

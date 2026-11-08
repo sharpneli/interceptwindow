@@ -8,6 +8,8 @@
 - `research/design/` holds decisions and proposals: what the game does.
 - `research/studies/` holds the research behind them: surveys, physics and sourced numbers about the real world.
 - `research/studies/solar-resources/` holds the baseline of what resources exist where in the solar system.
+- `data/solar-system/` holds the body catalogue (`bodies.csv`: masses, sizes and Kepler orbits for 993 bodies) and the script that rebuilds it from JPL extracts.
+- `art/style-anchors/` holds reference images for the visual tone. The images are third-party art, kept local and out of git; the README there has the credits and style notes.
 
 This repo is the master copy of the docs. Their old copies in the claude.ai project "Intercept Window" are frozen as of Nov 5, 2026, so edit the docs here, not there.
 
