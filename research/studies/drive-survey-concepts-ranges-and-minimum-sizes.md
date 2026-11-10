@@ -275,6 +275,13 @@ Sunlight or a laser heats propellant through a window or cavity. The power plant
 - **Engineered numbers:** cavity temperature, mirror areal mass, concentration ratio.
 - **Politics:** laser thermal makes the beam station a leverage point; whoever owns the laser owns the ship's thrust.
 - **Anchors:** Solar Moth, Mirror Steamer, laser thermal, ablative laser.
+- **Laser ablative variant.** A pulsed beam vaporises a solid propellant (plastic or metal) on the craft. There is no cavity, window or tank pressure; the ablator is the propellant.
+  - **Law (Phipps):** C_m × ve = 2 η_AB, where C_m is thrust per beam watt and η_AB ≤ 1 is the ablation efficiency (~0.5 or less in practice). So F = 2 η_AB P / ve, ve = 2 η_AB P / F and ṁ = 2 η_AB P / ve². This is the Layer 1 jet-power law with η_AB as the beam-to-jet efficiency.
+  - **ve:** continuous lasers reach only ~2 km/s (~200 s). Pulsed lasers give ≥5 km/s (≥500 s) at the right fluence: the optimum rises roughly as τ^0.4–0.45 with pulse length τ, about 0.5 J/cm² for ~5 km/s at 10 ns and 1.06 µm. Up to 7,500 s (~74 km/s) has been measured (KrF laser on aluminium).
+  - **Thrust per MW of beam** *(calc from the law)*: 510–1,020 N at 200 s; 200–410 N at 500 s; 100–200 N at 1,000 s; 20–41 N at 5,000 s (η_AB 0.5–1). Photon pressure, 0.0067 N per MW, is the floor.
+  - **Ablator life ∝ 1 / C_m²:** high thrust per watt eats the ablator fast.
+  - **Engineered numbers:** pulse length, fluence, ablator material, η_AB.
+  - **Basis:** small impulses demonstrated in the lab; launch and orbital use studied. Debris nudging and launch figures are in [`studies/beamed-energy-power-beaming-launch-and-cislunar-uses.md`](beamed-energy-power-beaming-launch-and-cislunar-uses.md).
 
 #### 7. Sails (photon, laser, magnetic, electric)
 
@@ -523,6 +530,7 @@ Electric concepts (2–5) are only as good as the power block behind them. This 
   - [Engine List 2](https://projectrho.com/public_html/rocket/enginelist2.php): every nuclear thermal concept, NSWR, fission fragment
   - [Engine List 3](https://projectrho.com/public_html/rocket/enginelist3.php): antimatter, fusion fuels and engines, Orion, Mini-Mag Orion, Z-pinch, PuFF, Medusa, ICF, MIF, ICAN, AIM
   - [Power Plant](https://projectrho.com/public_html/rocket/power.php) and [Fusion Fuel](https://projectrho.com/public_html/rocket/fusionfuel.php): power-block figures and the fusion fuel table
+- **Laser ablation:** Phipps et al., [Optimum parameters for laser ablation propulsion](https://www.photonicassociates.com/Optimum_parameters.pdf) (C_m–ve relation, optimum fluence, measured Isp).
 - **Present-day anchors:**
   - [DRACO (Wikipedia)](https://en.wikipedia.org/wiki/Demonstration_Rocket_for_Agile_Cislunar_Operations): cancelled 2025; ~20 % enriched fuel, >800 s goal
   - [Hall-effect thruster (Wikipedia)](https://en.wikipedia.org/wiki/Hall-effect_thruster): ranges, X3 mass and power, erosion

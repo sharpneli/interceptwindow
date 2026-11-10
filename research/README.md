@@ -27,6 +27,7 @@ Cross-references between docs are relative links. A backticked path that isn't a
 | [Manufacturing and the Dependency Ladder](design/manufacturing-and-the-dependency-ladder.md) | Processes rather than factories, vitamins, closure and the growth law that sets the pace of independence |
 | [Resource Fields, Grades and Yield Curves](design/resource-fields-grades-and-yield-curves.md) | How the resource baseline becomes game data: grade–tonnage fields, mining yields, surveys as pictures, campaign shake-ups |
 | [Mass Ledger – Element Groups and Conservation](design/mass-ledger-element-groups-and-conservation.md) | Exact mass conservation over about 20 element groups, process blocks as mass balances, sinks |
+| [Jovian Beam Network – When Laser Stations Pay](design/jovian-beam-network-when-laser-stations-pay.md) | Initial design study: reactor-powered laser stations feeding reactor-free tugs between the Galilean moons; Jovian Δv map, duty-cycle and traffic break-evens against onboard reactors and chemical depots; when, if ever, it pays |
 
 ### Ships, sensing and combat
 
@@ -48,6 +49,7 @@ Cross-references between docs are relative links. A backticked path that isn't a
 | Doc | What it covers |
 | --- | --- |
 | [Naming Presets](design/naming-presets.md) | Culture presets for ship, group, station and class names; prefixes from the registered type; names in the picture; renaming as an event |
+| [Body Surfaces and Shapes](design/body-surfaces-and-shapes-base-maps-detail-and-generated-small-bodies.md) | How bodies are drawn: 2k base maps with procedural detail for planets, generated distance-volume shapes for small bodies, real shape models where they exist |
 
 ## Studies
 
@@ -68,6 +70,7 @@ Cross-references between docs are relative links. A backticked path that isn't a
 | [Drive Survey – Concepts, Ranges and Minimum Sizes](studies/drive-survey-concepts-ranges-and-minimum-sizes.md) | Eighteen drive concepts as principles with performance bands, mass laws with floors, and waste-heat streams |
 | [Mass Drivers – Throwing, Catching and Bulk Logistics](studies/mass-drivers-throwing-catching-and-bulk-logistics.md) | Throwing and catching cargo, from today's hardware to momentum banks |
 | [Interplanetary Bulk Logistics – Mines, Depots and Shipyards](studies/interplanetary-bulk-logistics-mines-depots-and-shipyards.md) | Bulk transport without drivers, asteroid mines, depots and shipyards |
+| [Beamed Energy – Power Beaming, Beam-Driven Launch and Cislunar Uses](studies/beamed-energy-power-beaming-launch-and-cislunar-uses.md) | Microwave and laser thermal launch, laser ablation, lightcraft, power beaming to rovers, satellites and tugs, space solar power; diffraction, breakdown and receiver-heat limits |
 
 ### Solar system bodies
 

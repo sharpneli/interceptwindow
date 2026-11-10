@@ -1,0 +1,616 @@
+<title>Planet Texture Bench</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@400;500;600&display=swap">
+<style>
+/* Layout: the planet is the screen; a body rail, a tool strip and a readout card float over it (same rule as the ship bench). */
+:root{
+  color-scheme:dark;
+  --bg:#000; --plate:rgba(13,17,21,.82); --line:#2a323b; --line-strong:#3d4853;
+  --fg:#e3e7ea; --dim:#aab3bc; --mute:#77828d; --accent:#5cb8e6; --warn:#e0a040;
+  --sans:'IBM Plex Sans Condensed','Arial Narrow',system-ui,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,Consolas,monospace;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:13px;line-height:1.4;overflow:hidden;position:relative}
+#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#stage:active{cursor:grabbing}
+.hud{position:absolute;inset:0;display:grid;grid-template-columns:216px 1fr 300px;grid-template-rows:auto 1fr auto;gap:12px;
+  padding-block:14px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));pointer-events:none}
+.hud>*{pointer-events:auto;min-width:0}
+.plate{background:var(--plate);border:1px solid var(--line);backdrop-filter:blur(6px)}
+.cap{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--mute);font-weight:500}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+.rail{grid-column:1;grid-row:1/4;align-self:start;display:flex;flex-direction:column}
+.rail h1{font-size:15px;font-weight:600;margin:0;padding:10px 12px 2px;letter-spacing:.02em}
+.rail .sub{padding:0 12px 10px;color:var(--mute);font-size:12px;border-bottom:1px solid var(--line)}
+.grp{display:flex;flex-direction:column}
+.rail .cap{padding:9px 12px 4px}
+.pick{display:flex;justify-content:space-between;align-items:baseline;gap:8px;width:100%;text-align:left;background:none;border:0;border-left:2px solid transparent;
+  color:var(--fg);font:inherit;padding:6px 12px 6px 10px;cursor:pointer}
+.pick span:last-child{color:var(--mute);font-size:11px;white-space:nowrap}
+.pick:hover{background:rgba(92,184,230,.07)}
+.pick[aria-pressed="true"]{border-left-color:var(--accent);background:rgba(92,184,230,.12)}
+.pick:focus-visible,.tog:focus-visible,input:focus-visible{outline:1px solid var(--accent);outline-offset:-1px}
+.sliders{border-top:1px solid var(--line);margin-top:6px;padding:8px 12px 10px;display:grid;gap:7px}
+.sliders label{display:grid;grid-template-columns:1fr auto;gap:2px 8px;color:var(--dim);font-size:12px}
+.sliders output{color:var(--fg);font-size:11.5px}
+.sliders input{grid-column:1/3;width:100%;margin:0;accent-color:var(--accent)}
+
+.tools{grid-column:2/4;grid-row:1;justify-self:end;display:flex;flex-wrap:wrap;justify-content:flex-end}
+.tog{background:none;border:0;border-right:1px solid var(--line);color:var(--dim);font:inherit;font-size:12px;padding:6px 11px;cursor:pointer}
+.tog:last-child{border-right:0}
+.tog:hover{color:var(--fg)}
+.tog[aria-pressed="true"]{color:var(--accent);background:rgba(92,184,230,.1)}
+
+.card{grid-column:3;grid-row:3;padding:12px 14px;overflow:auto;max-height:100%}
+.card h2{margin:2px 0 0;font-size:19px;font-weight:600;letter-spacing:.01em}
+.card .cls{color:var(--dim);margin-bottom:9px}
+.card dl{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:0 0 9px;padding:8px 0;border-block:1px solid var(--line)}
+.card dt{color:var(--mute);font-size:11.5px}
+.card dd{margin:0;text-align:right;font-size:11.5px}
+.card p{margin:0;color:var(--dim);font-size:12.5px}
+.card p+p{margin-top:6px}
+.meter{height:4px;background:var(--line);margin:0 0 9px;position:relative}
+.meter i{position:absolute;inset:0 auto 0 0;background:var(--accent)}
+
+.split{position:absolute;top:0;bottom:0;left:50%;width:0;border-left:1px solid var(--line-strong);pointer-events:none}
+.split b{position:absolute;bottom:14px;font-weight:500;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);white-space:nowrap}
+.split b:first-child{right:10px}.split b:last-child{left:10px}
+.err{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:var(--dim)}
+
+@media (max-width:820px){
+  .hud{grid-template-columns:1fr;grid-template-rows:auto auto 1fr auto;gap:8px;padding-block:10px}
+  .rail{grid-column:1;grid-row:1;flex-direction:row;overflow-x:auto;align-items:stretch}
+  .rail h1,.rail .sub,.rail .cap,.sliders{display:none}
+  .grp{flex-direction:row;flex:none}
+  .pick{border-left:0;border-bottom:2px solid transparent;padding:8px 9px;white-space:nowrap;width:auto}
+  .pick span:last-child{display:none}
+  .pick[aria-pressed="true"]{border-bottom-color:var(--accent)}
+  .tools{grid-column:1;grid-row:2;justify-self:start;justify-content:flex-start}
+  .card{grid-column:1;grid-row:4;max-height:30vh;padding:10px 12px}
+  .card h2{font-size:16px}
+}
+</style>
+
+<canvas id="stage" aria-label="Planet view. Drag to turn, scroll or pinch to zoom."></canvas>
+<div class="split" id="split" hidden><b>Base map only</b><b>With detail</b></div>
+<div class="hud">
+  <nav class="rail plate" aria-label="Bodies and views">
+    <h1>Planet Texture Bench</h1>
+    <div class="sub">2k base maps with procedural detail</div>
+    <div class="grp" id="bodies"><div class="cap">Body</div></div>
+    <div class="grp" id="views"><div class="cap">View</div></div>
+    <div class="sliders">
+      <label for="phase">Sun phase <output id="phaseOut" class="mono"></output><input id="phase" type="range" min="-170" max="170" step="1" value="55"></label>
+      <label for="relief">Relief <output id="reliefOut" class="mono"></output><input id="relief" type="range" min="0" max="8" step="0.5" value="1"></label>
+    </div>
+  </nav>
+  <div class="tools plate" role="toolbar" aria-label="Layers">
+    <button class="tog" id="tDetail" aria-pressed="true">Detail</button>
+    <button class="tog" id="tSplit" aria-pressed="false">Split compare</button>
+    <button class="tog" id="tAtmo" aria-pressed="true">Atmosphere</button>
+    <button class="tog" id="tLights" aria-pressed="true">Night lights</button>
+  </div>
+  <aside class="card plate" aria-live="off">
+    <div class="cap">Handover</div>
+    <h2 id="cName"></h2>
+    <div class="cls" id="cWord"></div>
+    <div class="meter" title="Share of on-screen detail that is procedural"><i id="cMeter"></i></div>
+    <dl class="mono">
+      <dt>Altitude</dt><dd id="cAlt"></dd>
+      <dt>One screen pixel</dt><dd id="cPx"></dd>
+      <dt>One base-map pixel</dt><dd id="cTexel"></dd>
+      <dt>Procedural octaves</dt><dd id="cOct"></dd>
+    </dl>
+    <p id="cNote"></p>
+  </aside>
+</div>
+
+<script src="planet-textures.js"></script>
+<script>
+"use strict";
+/* ---------- bodies ---------- */
+const BODIES = [
+  { id:"earth", name:"Earth", radiusKm:6371.0, color:"earth-color", height:"earth-height", night:"earth-night", sdf:"earth-coast-sdf", classA:"earth-class-a", classB:"earth-class-b",
+    exposure:1.25,
+    note:"Colour: NASA Blue Marble at 2k. Coast: Fleetwright's Natural Earth 1:10M land as a distance field. Land detail follows a surface-class map (MODIS land cover): forest, cropland, desert, ice and grassland each get their own texture. No clouds yet." },
+  { id:"moon", name:"Moon", radiusKm:1737.4, color:"moon-color", height16:"moon-height", exposure:1.5,
+    note:"Colour: LRO mosaic at 2k (Solar System Scope, CC BY 4.0). Relief: LROC GLD100 elevation at 2k, filler beyond 79° latitude. Craters under the map's resolution are procedural, fewer on the dark maria." },
+  { id:"mars", name:"Mars", radiusKm:3389.5, color:"mars-color", height16:"mars-height", exposure:1.35,
+    note:"Colour: Viking mosaic at 2k (Solar System Scope, CC BY 4.0). Relief: MOLA elevation at 1440 × 720. Craters and dust variation under the map's resolution are procedural." },
+];
+const BASE_W = 2048, SDF_W = 8192, SDF_RANGE_PX = 16, FOV_TAN = Math.tan(15 * Math.PI / 180), MIN_PX_KM = 0.02;
+
+/* ---------- shader ---------- */
+const VS = `#version 300 es
+in vec2 a; void main(){ gl_Position = vec4(a,0.,1.); }`;
+
+const FS = `#version 300 es
+precision highp float; precision highp int;
+out vec4 fragColor;
+uniform vec2 uRes;
+uniform vec3 uCam, uRight, uUp, uSun;
+uniform float uD, uCq, uTan, uRkm, uTexelKm, uSdfTexelKm, uDetail, uSplit, uRelief, uAtmo, uLights, uExposure, uHasHeight;
+uniform vec2 uHeightTx;
+uniform int uBody;
+uniform sampler2D uColor, uHeight, uNight, uSdf, uClassA, uClassB;
+
+const float PI = 3.14159265359;
+vec3 lin(vec3 c){ return pow(c, vec3(2.2)); }
+
+/* Integer hashes: the same numbers on every GPU, so a body always looks the same. */
+uvec3 pcg3(uvec3 v){
+  v = v*1664525u + 1013904223u; v.x += v.y*v.z; v.y += v.z*v.x; v.z += v.x*v.y;
+  v ^= v >> 16u; v.x += v.y*v.z; v.y += v.z*v.x; v.z += v.x*v.y; return v; }
+vec3 h3(ivec3 c, int seed){ return vec3(pcg3(uvec3(c) + uint(seed)*uvec3(7919u,104729u,1299709u))) * (1.0/4294967296.0); }
+float h1(ivec3 c, int seed){ return h3(c, seed).x; }
+
+/* Value noise in -1..1 with its gradient (yzw). */
+vec4 noised(vec3 x, int seed){
+  ivec3 i = ivec3(floor(x)); vec3 w = fract(x);
+  vec3 u = w*w*w*(w*(w*6.-15.)+10.), du = 30.*w*w*(w*(w-2.)+1.);
+  float a=h1(i,seed), b=h1(i+ivec3(1,0,0),seed), c=h1(i+ivec3(0,1,0),seed), d=h1(i+ivec3(1,1,0),seed),
+        e=h1(i+ivec3(0,0,1),seed), f=h1(i+ivec3(1,0,1),seed), g=h1(i+ivec3(0,1,1),seed), h=h1(i+ivec3(1,1,1),seed);
+  float k0=a,k1=b-a,k2=c-a,k3=e-a,k4=a-b-c+d,k5=a-c-e+g,k6=a-b-e+f,k7=-a+b+c-d+e-f-g+h;
+  return vec4(-1.+2.*(k0+k1*u.x+k2*u.y+k3*u.z+k4*u.x*u.y+k5*u.y*u.z+k6*u.z*u.x+k7*u.x*u.y*u.z),
+    2.*du*vec3(k1+k4*u.y+k6*u.z+k7*u.y*u.z, k2+k5*u.z+k4*u.x+k7*u.z*u.x, k3+k6*u.x+k5*u.y+k7*u.x*u.y));
+}
+
+/* The detail ladder: octaves from lam0 km down, each halving. An octave counts once it is
+   wider than a few screen pixels, so detail arrives smoothly as the camera closes in.
+   Returns a slope vector (xyz) and a value for colour (w). Slopes are scale-free. */
+vec4 ladder(vec3 p, float px, float lam0, int seed, float persist){
+  vec4 acc = vec4(0.);
+  float lam = lam0;
+  for(int k=0;k<13;k++){
+    float w = smoothstep(1.0, 3.0, lam/px);
+    if(w <= 0.) break;
+    vec4 n = noised(p*(uRkm/lam) + float(k)*17.3, seed+k);
+    acc.xyz += w*n.yzw;
+    acc.w   += w*n.x*pow(persist, float(k));
+    lam *= 0.5;
+  }
+  return acc;
+}
+
+/* Craters: one jittered crater per cell, cells halving per octave, so numbers rise
+   as size falls. Bowl plus raised rim; the slope is exact. dens thins them out. */
+void craters(vec3 p, float px, float lam0, float dens, int seed, inout vec3 G, inout float alb){
+  float lam = lam0;
+  for(int k=0;k<12;k++){
+    if(lam < px) break;
+    float s = 2.*lam/uRkm;
+    vec3 q = p/s; ivec3 b = ivec3(floor(q-0.5));
+    for(int j=0;j<8;j++){
+      ivec3 c = b + ivec3(j&1,(j>>1)&1,(j>>2)&1);
+      vec3 hb = h3(c, seed+k+50);
+      if(hb.x > dens) continue;
+      vec3 ctr = (vec3(c) + 0.5 + (h3(c, seed+k)-0.5)*0.6)*s;
+      float L = length(ctr);
+      if(abs(L-1.) > 0.5*s) continue;
+      ctr /= L;
+      float rc = s*mix(0.14, 0.45, hb.y*hb.y);
+      vec3 dv = p-ctr; float dist = length(dv), x = dist/rc;
+      if(x > 1.7) continue;
+      float w = smoothstep(3., 9., 2.*rc*uRkm/px);
+      float fresh = mix(0.2, 1.0, hb.z*hb.z);
+      float e = exp(-pow((x-1.)/0.2, 2.));
+      float df = (x<1. ? 0.45*x : 0.) - 2.5*(x-1.)*e;
+      G += w*fresh*df*dv/max(dist, 1e-9);
+      alb += w*fresh*fresh*(0.10*e + 0.05*smoothstep(1.7,1.0,x)*step(1.,x) - 0.03*step(x,1.));
+    }
+    lam *= 0.5;
+  }
+}
+
+/* Cropland: a patchwork of rectangular plots. Each district of about 45 km has its own grid direction.
+   Returns a colour multiplier with a mean near one; edge is the distance in km to the plot's edge. */
+vec3 plots(vec3 p, float sizeKm, int seed, out float edge){
+  vec3 P = p*uRkm; ivec3 dc = ivec3(floor(P/45.));
+  vec3 hr = h3(dc, seed), nc = normalize(vec3(dc)+0.5);
+  vec3 a1 = normalize(cross(nc, normalize(hr-0.5)+vec3(0.,0.,1e-3))), a2 = cross(nc, a1);
+  float longer = mix(1.2, 2.4, hr.x);
+  vec2 q = vec2(dot(P,a1)/(sizeKm*longer), dot(P,a2)/sizeKm);
+  ivec2 c = ivec2(floor(q)); vec2 f = fract(q), d = min(f, 1.-f);
+  vec3 h = h3(ivec3(c, dc.x*7+dc.y*13+dc.z*29), seed+1);
+  vec3 t = h.x < 0.40 ? vec3(0.84,1.06,0.78) : h.x < 0.70 ? vec3(1.20,1.12,0.84) : h.x < 0.88 ? vec3(0.78,0.74,0.70) : vec3(1.10,1.16,0.92);
+  edge = min(d.x*longer, d.y)*sizeKm;
+  return t*(0.9+0.2*h.y)/vec3(0.968,1.032,0.80);
+}
+/* Desert: ridged noise stretched along one direction, for dune fields. Slope in xyz, height in w. */
+vec4 dunes(vec3 p, float px, int seed){
+  vec3 A = normalize(vec3(0.55,0.25,0.80)), P = p*uRkm; vec4 acc = vec4(0.); float lam = 5.;
+  float erg = smoothstep(-0.15, 0.35, noised(P/130., seed+20).x);          /* dune seas cover only part of a desert */
+  for(int k=0;k<3;k++){
+    float w = smoothstep(1.0, 3.0, lam/px);
+    if(w <= 0.) break;
+    vec4 n = noised((P - A*dot(P,A)*0.88)/lam + float(k)*7.7, seed+k);
+    float r = 1.-abs(n.x); vec3 g = -sign(n.x)*n.yzw;
+    acc.xyz += w*erg*(g - A*dot(g,A)*0.88); acc.w += w*erg*r*pow(0.6, float(k));
+    lam *= 0.5;
+  }
+  return acc;
+}
+
+void main(){
+  vec2 ndc = (gl_FragCoord.xy*2. - uRes)/uRes.y;
+  vec2 sxy = ndc*uTan;
+  float s2 = dot(sxy,sxy);
+  vec3 dir = normalize(-uCam + sxy.x*uRight + sxy.y*uUp);
+  float inv = inversesqrt(1.+s2);
+  float b = uD*inv;
+  float disc = 1. - uD*uD*s2/(1.+s2);
+  bool detailOn = uDetail > 0.5 && !(uSplit > 0.5 && gl_FragCoord.x < uRes.x*0.5);
+  float pxAng = 2.*uTan/uRes.y;
+  vec3 col = vec3(0.);
+
+  vec3 atmoCol = uBody==0 ? vec3(0.20,0.42,1.0)*0.55 : vec3(0.85,0.55,0.38)*0.10;
+  float atmoH = uBody==0 ? 0.0045 : 0.006;
+  bool hasAtmo = uAtmo > 0.5 && uBody != 1;
+
+  if(disc <= 0.){
+    if(hasAtmo){
+      float alt = sqrt(1.-disc) - 1.;
+      vec3 pc = normalize(uCam*uD + b*dir);
+      col = atmoCol*exp(-alt/atmoH)*smoothstep(-0.15, 0.25, dot(pc,uSun));
+    }
+  } else {
+    float t = uCq/(b + sqrt(disc));
+    vec3 p = normalize(uCam*uD + t*dir);
+    vec3 n = p, V = -dir;
+    float mu = max(dot(n,V), 0.);
+    float px = pxAng*t*uRkm;                       /* km across one screen pixel, face on */
+    float lat = asin(clamp(p.y,-1.,1.)), lon = atan(p.x, p.z);
+    vec2 uv = vec2(lon/(2.*PI)+0.5, 0.5-lat/PI);
+    float lod = max(log2(px/max(sqrt(mu),0.2)/uTexelKm), 0.);
+    vec3 east = normalize(cross(vec3(0.,1.,0.), p) + vec3(1e-6,0.,0.)), north = cross(p, east);
+    float lam0 = 2.*uTexelKm;                      /* the base map holds everything wider than this */
+    float geo = dot(n,uSun);
+    vec3 G = vec3(0.), Gb = vec3(0.); float alb = 1.;
+    vec3 base; float land = 0., spec = 0.;
+
+    if(uBody == 0){
+      vec2 tx = 1./vec2(2048.,1024.);
+      float sdfLod = max(log2(px/uSdfTexelKm), 0.);
+      vec2 sx = 1./vec2(8192.,4096.);
+      float sdC = textureLod(uSdf, uv, sdfLod).r;
+      float sdKm = (sdC-0.5)*2.*16.*uSdfTexelKm;
+      float gLod = max(sdfLod, 2.);                  /* a smoothed field for the direction inland */
+      vec2 sg = vec2(textureLod(uSdf, uv+vec2(6.*sx.x,0.), gLod).r - textureLod(uSdf, uv-vec2(6.*sx.x,0.), gLod).r,
+                     textureLod(uSdf, uv+vec2(0.,6.*sx.y), gLod).r - textureLod(uSdf, uv-vec2(0.,6.*sx.y), gLod).r);
+      sg = sg/max(length(sg), 1e-5);
+      vec4 dl = vec4(0.);
+      if(detailOn){
+        dl = ladder(p, px, lam0, 11, 0.8);
+        /* break the coast up below the land file's resolution */
+        vec4 cn = ladder(p, px, 2.*uSdfTexelKm, 31, 0.5);
+        sdKm += cn.w*0.7*uSdfTexelKm;
+      }
+      land = smoothstep(-0.7*px, 0.7*px, sdKm);
+      /* The 2k colour map smears sea into land along the coast. Close in, read the colour
+         from a little way inland (or out to sea) along the distance field's gradient. */
+      float near = detailOn ? 1.-smoothstep(0.5, 2.0, px/uTexelKm) : 0.;
+      float sdTex = sdKm/uTexelKm;
+      vec3 cl = lin(textureLod(uColor, uv + sg*tx*near*max(1.6-sdTex,0.), lod).rgb);
+      vec3 cw = lin(textureLod(uColor, uv - sg*tx*near*max(1.6+sdTex,0.), lod).rgb);
+      vec3 plain = lin(textureLod(uColor, uv, lod).rgb);
+      base = mix(plain, mix(cw, cl, land), near);
+      float landMix = mix(smoothstep(0.02,0.10,plain.g-plain.b*0.55), land, max(near, 0.6));
+      /* relief the base height map holds */
+      float hE = textureLod(uHeight, uv+vec2(tx.x,0.), lod).r, hW = textureLod(uHeight, uv-vec2(tx.x,0.), lod).r;
+      float hN = textureLod(uHeight, uv-vec2(0.,tx.y), lod).r, hS = textureLod(uHeight, uv+vec2(0.,tx.y), lod).r;
+      float hC = textureLod(uHeight, uv, lod).r;
+      float span = 2.*uTexelKm*exp2(lod);
+      vec2 gb = vec2((hE-hW)/max(cos(lat),0.05), hN-hS)*8.8/span;
+      G += landMix*uRelief*(gb.x*east + gb.y*north);
+      if(detailOn){
+        float rough = clamp(0.35 + 10.*length(gb) + 1.5*hC, 0.35, 2.2);
+        float patch_ = clamp(dl.w*0.45, -1., 1.);
+        /* Surface classes. The map gives each 20 km pixel's shares of forest, cropland, barren and ice;
+           the rest is grass and shrub. Close in, noise breaks the shares into patches of one class each. */
+        vec3 ca = textureLod(uClassA, uv, lod).rgb; float ice = textureLod(uClassB, uv, lod).r;
+        vec4 mean4 = vec4(ca, max(1.-ca.r-ca.g-ca.b-ice, 0.)) + 0.001;        /* forest, crop, barren, grass */
+        float n9 = noised(p*uRkm/9., 73).x*smoothstep(1.,3.,9./px), n2 = noised(p*uRkm/2.2, 74).x*smoothstep(1.,3.,2.2/px);
+        vec4 w4 = max(mean4*vec4(1.+0.9*n9+0.5*n2, 1.-0.8*n9-0.4*n2, 1.+0.4*n9, 1.-0.3*n2), 0.);
+        w4 = pow(w4, vec4(mix(1., 3., near))); w4 /= w4.x+w4.y+w4.z+w4.w; mean4 /= mean4.x+mean4.y+mean4.z+mean4.w;
+        /* each class leans the base colour its own way; dividing by the pixel's mean lean keeps the map's colour on average */
+        mat4x3 lean = mat4x3(vec3(0.78,0.92,0.76), vec3(1.10,1.09,0.96), vec3(1.14,1.08,0.96), vec3(1.02,1.03,0.92));
+        base *= mix(vec3(1.), (lean*w4)/(lean*mean4), land*near*(1.-ice));
+        float calm = 1.-0.95*ice;                                             /* ice sheets are smooth */
+        rough = mix(rough, 0.35, ice);
+        G += land*calm*rough*uRelief*(0.10*w4.w + 0.05*w4.z + 0.07*w4.x + 0.03*w4.y)*dl.xyz;
+        alb *= 1. + land*calm*(0.38*w4.w + 0.20*w4.z + 0.12*w4.x + 0.10*w4.y)*patch_ + (1.-land)*0.04*patch_;
+        /* forest canopy: clumps a kilometre and a few hundred metres across */
+        float canopy = 0.6*noised(p*uRkm/1.3, 81).x*smoothstep(1.,3.,1.3/px) + 0.5*noised(p*uRkm/0.32, 82).x*smoothstep(1.,3.,0.32/px);
+        alb *= 1. + land*calm*w4.x*0.42*canopy;
+        base = mix(base, base*vec3(1.22,1.10,0.86), land*calm*(w4.w+w4.z)*max(patch_,0.));
+        if(w4.y > 0.01){
+          float e1, e2; vec3 t1 = plots(p, 0.7, 301, e1), t2 = plots(p, 5.5, 311, e2);
+          float v1 = smoothstep(1., 3., 0.7/px), v2 = smoothstep(1., 3., 5.5/px);
+          vec3 t = mix(vec3(1.), t1, 0.85*v1)*mix(vec3(1.), t2, 0.35*v2);
+          t *= 1.-0.30*v1*(1.-smoothstep(0.6*px, 1.6*px, e1));             /* hedges and tracks between plots */
+          base *= mix(vec3(1.), t, land*w4.y*(1.-ice));
+        }
+        if(w4.z > 0.01){
+          vec4 dn = dunes(p, px, 331);
+          G += land*w4.z*calm*0.10*uRelief*(dn.xyz - n*dot(dn.xyz,n));
+          alb *= 1. + land*w4.z*calm*0.10*(dn.w-0.5);
+        }
+        /* shallow water a little lighter just off the coast */
+        base += (1.-land)*near*vec3(0.0,0.012,0.016)*exp(sdKm/12.);
+      }
+      spec = 1.-landMix;
+      land = landMix;
+    } else {
+      base = lin(textureLod(uColor, uv, lod).rgb);
+      if(uHasHeight > 0.5){
+        /* relief the elevation map holds (km, float), by central differences one map pixel apart */
+        float hTexKm = 2.*PI*uRkm*uHeightTx.x;
+        float hl = max(log2(px/max(sqrt(mu),0.2)/hTexKm), 0.);
+        float hE = textureLod(uHeight, uv+vec2(uHeightTx.x,0.), hl).r, hW = textureLod(uHeight, uv-vec2(uHeightTx.x,0.), hl).r;
+        float hN = textureLod(uHeight, uv-vec2(0.,uHeightTx.y), hl).r, hS = textureLod(uHeight, uv+vec2(0.,uHeightTx.y), hl).r;
+        vec2 gb = vec2((hE-hW)/max(cos(lat),0.05), hN-hS)/(2.*hTexKm);
+        Gb = gb.x*east + gb.y*north;
+      }
+      if(detailOn){
+        float lum = dot(base, vec3(0.3,0.5,0.2));
+        float dens = uBody==1 ? mix(0.22, 0.75, smoothstep(0.03, 0.22, lum)) : 0.28;
+        float ca = 0.;
+        craters(p, px, 0.5*lam0, dens, 101+uBody*1000, G, ca);
+        vec4 dl = ladder(p, px, lam0, 211+uBody*1000, 0.75);
+        G = G + (uBody==1 ? 0.025 : 0.02)*dl.xyz;
+        alb *= 1. + ca + (uBody==1 ? 0.06 : 0.14)*dl.w;
+      }
+    }
+
+    if(uBody != 0) G = uRelief*(G + Gb);
+    vec3 nn = normalize(n - (G - n*dot(G,n)));
+    float mu0 = max(dot(nn,uSun),0.) * smoothstep(-0.01, 0.04, geo);
+    /* Airless regolith is flatter than Lambert: blend toward Lommel-Seeliger. */
+    float ls = uBody==1 ? 0.75 : (uBody==2 ? 0.35 : 0.);
+    float muv = max(dot(nn,V), 0.02);
+    float refl = mix(mu0, 2.*mu0/(mu0+muv+1e-4)*0.5*(0.6+0.4*mu0/max(geo,0.05)), ls);
+    refl = mix(mu0, min(refl, 1.2), ls);
+    col = base*alb*refl;
+
+    if(uBody == 0){
+      vec3 Hh = normalize(uSun+V);
+      col += spec*vec3(1.0,0.96,0.88)*0.30*pow(max(dot(n,Hh),0.), 90.)*smoothstep(0.,0.1,geo);
+      if(uLights > 0.5){
+        vec3 nl = lin(textureLod(uNight, uv, lod).rgb);
+        /* the source map has a blue floor under the lights; the red channel is close to lights alone */
+        float glow = max(nl.r - 0.003, 0.);
+        col += min(glow*5., 0.45)*vec3(1.0,0.78,0.48)*(1.-smoothstep(-0.12, 0.02, geo));
+      }
+    }
+    if(hasAtmo){
+      float path = 1./max(mu, 0.07);
+      float sunlit = smoothstep(-0.15, 0.25, geo);
+      float k = uBody==0 ? 0.05 : 0.07;
+      float sc = 1.-exp(-k*path);
+      col = col*(1.-0.6*sc) + atmoCol*sc*sunlit;
+    }
+  }
+  col *= uExposure;
+  col = col/(1.+0.25*col);                         /* gentle shoulder, blacks stay black */
+  fragColor = vec4(pow(clamp(col*1.2,0.,1.), vec3(1./2.2)), 1.);
+}`;
+
+/* ---------- GL setup ---------- */
+const canvas = document.getElementById("stage");
+const gl = canvas.getContext("webgl2", { antialias:false, alpha:false, preserveDrawingBuffer:true });
+function fail(msg){ const d=document.createElement("div"); d.className="err"; d.textContent=msg; document.body.appendChild(d); }
+let prog, U = {}, tex = {}, dirty = true;
+const state = { body:0, lat:20, lon:15, h:3.2, phase:55, relief:1, detail:true, split:false, atmo:true, lights:true };
+
+function compile(type, src){
+  const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+  if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+  return s;
+}
+function loadTex(key, opts){
+  return new Promise((res, rej) => {
+    const im = new Image();
+    im.onload = () => {
+      const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
+      gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE);
+      if(opts && opts.r8) gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, gl.RED, gl.UNSIGNED_BYTE, im);
+      else gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im);
+      gl.generateMipmap(gl.TEXTURE_2D);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      res(t);
+    };
+    im.onerror = () => rej(new Error("Could not read texture " + key));
+    im.src = window.PLANET_TEX[key];
+  });
+}
+/* A 16-bit height map (red high byte, green low) into a float texture in km, with its own mips. */
+function loadHeight16(key){
+  return new Promise((res, rej) => {
+    const im = new Image();
+    im.onload = () => {
+      const meta = window.PLANET_TEX_META[key], c = document.createElement("canvas");
+      let w = c.width = im.width, h = c.height = im.height;
+      const cx = c.getContext("2d", { willReadFrequently:true }); cx.drawImage(im, 0, 0);
+      const d = cx.getImageData(0, 0, w, h).data, k = (meta.maxKm-meta.minKm)/65535;
+      let f = new Float32Array(w*h);
+      for(let i=0;i<w*h;i++) f[i] = meta.minKm + (d[4*i]*256 + d[4*i+1])*k;
+      const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
+      gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+      for(let level=0;;level++){
+        gl.texImage2D(gl.TEXTURE_2D, level, gl.R16F, w, h, 0, gl.RED, gl.FLOAT, f);
+        if(w === 1 && h === 1) break;
+        const w2 = Math.max(1, w>>1), h2 = Math.max(1, h>>1), g = new Float32Array(w2*h2);
+        for(let y=0;y<h2;y++) for(let x=0;x<w2;x++){
+          const x0 = Math.min(w-1, 2*x), x1 = Math.min(w-1, 2*x+1), y0 = Math.min(h-1, 2*y), y1 = Math.min(h-1, 2*y+1);
+          g[y*w2+x] = 0.25*(f[y0*w+x0] + f[y0*w+x1] + f[y1*w+x0] + f[y1*w+x1]);
+        }
+        f = g; w = w2; h = h2;
+      }
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      res({ tex:t, w:im.width, h:im.height });
+    };
+    im.onerror = () => rej(new Error("Could not read texture " + key));
+    im.src = window.PLANET_TEX[key];
+  });
+}
+async function init(){
+  if(!gl) return fail("This bench needs WebGL 2.");
+  if(!window.PLANET_TEX) return fail("planet-textures.js is missing. Run make_textures.py to build it next to this file.");
+  try{
+    prog = gl.createProgram();
+    gl.attachShader(prog, compile(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FS));
+    gl.linkProgram(prog);
+    if(!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
+  }catch(e){ console.error(e); return fail("The planet shader did not compile on this GPU: " + e.message); }
+  gl.useProgram(prog);
+  const n = gl.getProgramParameter(prog, gl.ACTIVE_UNIFORMS);
+  for(let i=0;i<n;i++){ const u = gl.getActiveUniform(prog, i); U[u.name] = gl.getUniformLocation(prog, u.name); }
+  const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(prog, "a"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  const blank = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, blank);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0,0,0,255]));
+  tex.blank = blank;
+  try{
+    for(const b of BODIES){
+      tex[b.color] = await loadTex(b.color);
+      if(b.height) tex[b.height] = await loadTex(b.height);
+      if(b.height16) tex[b.height16] = await loadHeight16(b.height16);
+      if(b.night) tex[b.night] = await loadTex(b.night);
+      if(b.sdf) tex[b.sdf] = await loadTex(b.sdf, { r8:true });
+      if(b.classA){ tex[b.classA] = await loadTex(b.classA); tex[b.classB] = await loadTex(b.classB); }
+    }
+  }catch(e){ return fail(e.message); }
+  buildUi(); resize(); window.addEventListener("resize", resize);
+  requestAnimationFrame(frame);
+  window.bench = { state, set(o){ Object.assign(state, o); syncUi(); dirty = true; }, ready:true, pxKm, hForPx };
+}
+
+/* ---------- camera and frame ---------- */
+function pxAngle(){ return 2*FOV_TAN/canvas.height; }
+function pxKm(){ return pxAngle()*state.h*BODIES[state.body].radiusKm; }
+function hForPx(km){ return km/(pxAngle()*BODIES[state.body].radiusKm); }
+function texelKm(){ return 2*Math.PI*BODIES[state.body].radiusKm/BASE_W; }
+function clampH(){ state.h = Math.min(14, Math.max(hForPx(MIN_PX_KM), state.h)); }
+
+function resize(){
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.max(2, Math.round(canvas.clientWidth*dpr));
+  canvas.height = Math.max(2, Math.round(canvas.clientHeight*dpr));
+  dirty = true;
+}
+function frame(){
+  if(dirty){ dirty = false; draw(); readout(); }
+  requestAnimationFrame(frame);
+}
+function draw(){
+  const b = BODIES[state.body];
+  clampH();
+  const la = state.lat*Math.PI/180, lo = state.lon*Math.PI/180;
+  const cam = [Math.cos(la)*Math.sin(lo), Math.sin(la), Math.cos(la)*Math.cos(lo)];
+  const right = [Math.cos(lo), 0, -Math.sin(lo)];
+  const up = [cam[1]*right[2]-cam[2]*right[1], cam[2]*right[0]-cam[0]*right[2], cam[0]*right[1]-cam[1]*right[0]];
+  const sl = lo + state.phase*Math.PI/180, sd = 12*Math.PI/180;
+  const sun = [Math.cos(sd)*Math.sin(sl), Math.sin(sd), Math.cos(sd)*Math.cos(sl)];
+  const d = 1 + state.h;
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.uniform2f(U.uRes, canvas.width, canvas.height);
+  gl.uniform3fv(U.uCam, cam); gl.uniform3fv(U.uRight, right); gl.uniform3fv(U.uUp, up); gl.uniform3fv(U.uSun, sun);
+  gl.uniform1f(U.uD, d); gl.uniform1f(U.uCq, state.h*(d+1)); gl.uniform1f(U.uTan, FOV_TAN);
+  gl.uniform1f(U.uRkm, b.radiusKm); gl.uniform1f(U.uTexelKm, texelKm());
+  gl.uniform1f(U.uSdfTexelKm, 2*Math.PI*b.radiusKm/SDF_W);
+  gl.uniform1f(U.uDetail, state.detail?1:0); gl.uniform1f(U.uSplit, state.split?1:0);
+  gl.uniform1f(U.uRelief, state.relief); gl.uniform1f(U.uAtmo, state.atmo?1:0); gl.uniform1f(U.uLights, state.lights?1:0);
+  gl.uniform1f(U.uExposure, b.exposure); gl.uniform1i(U.uBody, state.body);
+  const bind = (unit, name, t) => { gl.activeTexture(gl.TEXTURE0+unit); gl.bindTexture(gl.TEXTURE_2D, t || tex.blank); gl.uniform1i(U[name], unit); };
+  bind(0, "uColor", tex[b.color]); const h16 = tex[b.height16];
+  gl.uniform1f(U.uHasHeight, h16?1:0); gl.uniform2f(U.uHeightTx, h16?1/h16.w:0, h16?1/h16.h:0);
+  bind(1, "uHeight", h16 ? h16.tex : tex[b.height]); bind(2, "uNight", tex[b.night]); bind(3, "uSdf", tex[b.sdf]); bind(4, "uClassA", tex[b.classA]); bind(5, "uClassB", tex[b.classB]);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+}
+
+/* ---------- readout ---------- */
+const $ = id => document.getElementById(id);
+function fmtKm(km){ return km >= 100 ? Math.round(km).toLocaleString("en")+" km" : km >= 1 ? km.toFixed(1)+" km" : Math.round(km*1000)+" m"; }
+function readout(){
+  const b = BODIES[state.body], px = pxKm(), tx = texelKm();
+  /* Share of the detail on screen that the base map cannot supply: octaves between a screen pixel and a map pixel. */
+  const oct = Math.max(0, Math.log2(2*tx/(2*px)));
+  const share = oct/(oct + Math.max(0.0001, Math.log2(Math.max(2, canvas.height*0.5))));
+  const word = oct < 0.15 ? "The base map carries the whole picture." : share < 0.25 ? "Mostly base map, detail coming in." :
+               share < 0.5 ? "Base map for the shapes, procedural for the texture." : "Mostly procedural; the base map only sets colour and place.";
+  $("cName").textContent = b.name; $("cWord").textContent = word;
+  $("cMeter").style.width = (share*100).toFixed(1)+"%";
+  $("cAlt").textContent = fmtKm(state.h*b.radiusKm);
+  $("cPx").textContent = fmtKm(px); $("cTexel").textContent = fmtKm(tx);
+  $("cOct").textContent = state.detail ? oct.toFixed(1) : "off";
+  $("cNote").textContent = b.note;
+  $("phaseOut").textContent = state.phase+"°"; $("reliefOut").textContent = "×"+state.relief;
+}
+
+/* ---------- UI ---------- */
+const VIEWS = [
+  { name:"Whole disc", hint:"far", go(){ state.h = 3.2; } },
+  { name:"Handover", hint:"1 px = 1 map px", go(){ state.h = hForPx(texelKm()); } },
+  { name:"Regional", hint:"1 px = 1 km", go(){ state.h = hForPx(1); } },
+  { name:"Close", hint:"1 px = 100 m", go(){ state.h = hForPx(0.1); } },
+];
+function buildUi(){
+  BODIES.forEach((b, i) => {
+    const el = document.createElement("button"); el.className = "pick"; el.dataset.body = i;
+    el.innerHTML = "<span></span><span class='mono'></span>";
+    el.children[0].textContent = b.name; el.children[1].textContent = Math.round(b.radiusKm).toLocaleString("en")+" km";
+    el.onclick = () => { const px = pxKm(); state.body = i; state.h = Math.min(3.2, hForPx(px)); if(state.h > 2.5) state.h = 3.2; syncUi(); dirty = true; };
+    $("bodies").appendChild(el);
+  });
+  VIEWS.forEach(v => {
+    const el = document.createElement("button"); el.className = "pick";
+    el.innerHTML = "<span></span><span class='mono'></span>"; el.children[0].textContent = v.name; el.children[1].textContent = v.hint;
+    el.onclick = () => { v.go(); dirty = true; };
+    $("views").appendChild(el);
+  });
+  const tog = (id, key) => { $(id).onclick = () => { state[key] = !state[key]; syncUi(); dirty = true; }; };
+  tog("tDetail","detail"); tog("tSplit","split"); tog("tAtmo","atmo"); tog("tLights","lights");
+  $("phase").oninput = e => { state.phase = +e.target.value; dirty = true; };
+  $("relief").oninput = e => { state.relief = +e.target.value; dirty = true; };
+
+  /* drag turns the body under the cursor; wheel and pinch zoom */
+  const pts = new Map(); let pinch = 0;
+  canvas.addEventListener("pointerdown", e => { canvas.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]); pinch = 0; });
+  canvas.addEventListener("pointermove", e => {
+    if(!pts.has(e.pointerId)) return;
+    const prev = pts.get(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]);
+    const dpr = canvas.height/canvas.clientHeight;
+    if(pts.size === 1){
+      const k = Math.min(pxAngle()*dpr*state.h, 0.006)*180/Math.PI;
+      state.lon -= (e.clientX-prev[0])*k/Math.max(0.2, Math.cos(state.lat*Math.PI/180));
+      state.lat = Math.max(-89, Math.min(89, state.lat + (e.clientY-prev[1])*k));
+    } else if(pts.size === 2){
+      const [a, b] = [...pts.values()], dist = Math.hypot(a[0]-b[0], a[1]-b[1]);
+      if(pinch) state.h *= pinch/dist;
+      pinch = dist;
+    }
+    dirty = true;
+  });
+  const end = e => { pts.delete(e.pointerId); pinch = 0; };
+  canvas.addEventListener("pointerup", end); canvas.addEventListener("pointercancel", end);
+  canvas.addEventListener("wheel", e => { e.preventDefault(); state.h *= Math.exp(e.deltaY*0.0015); dirty = true; }, { passive:false });
+  syncUi();
+}
+function syncUi(){
+  document.querySelectorAll("#bodies .pick").forEach(el => el.setAttribute("aria-pressed", String(+el.dataset.body === state.body)));
+  $("tDetail").setAttribute("aria-pressed", String(state.detail)); $("tSplit").setAttribute("aria-pressed", String(state.split));
+  $("tAtmo").setAttribute("aria-pressed", String(state.atmo)); $("tLights").setAttribute("aria-pressed", String(state.lights));
+  $("split").hidden = !state.split;
+  $("phase").value = state.phase; $("relief").value = state.relief;
+}
+init();
+</script>
